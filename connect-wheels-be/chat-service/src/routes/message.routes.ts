@@ -10,7 +10,8 @@ import {
   getMessagesValidation,
   markMessageAsReadValidation,
   markChatAsReadValidation,
-  deleteMessageValidation
+  deleteMessageValidation,
+  updateMessageValidation
 } from '../validators/message.validator';
 
 const router = Router();
@@ -50,6 +51,17 @@ router.patch(
   markMessageAsReadValidation,
   validateRequest,
   messageController.markMessageAsRead
+);
+
+/**
+ * PATCH /api/messages/:messageId
+ * Update message content (only sender can edit)
+*/
+router.patch(
+ '/:messageId',
+ updateMessageValidation,
+ validateRequest,
+ messageController.updateMessage
 );
 
 /**

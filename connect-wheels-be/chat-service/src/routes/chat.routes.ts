@@ -13,7 +13,7 @@ const router = Router();
 const chatController = new ChatController();
 
 // Apply authentication to all routes
-// router.use(authenticateJWT);
+ router.use(authenticateJWT);
 
 /**
  * POST /api/chats

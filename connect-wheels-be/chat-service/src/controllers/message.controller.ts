@@ -127,7 +127,7 @@ export class MessageController {
           },
         },
       };
-      res.status(200).json({ response });
+      res.status(200).json(response);
     } catch (error) {
       console.error("Error getting messages:", error);
       res.status(500).json({

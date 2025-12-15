@@ -44,10 +44,21 @@ const deleteUserByID = async (userId: number) => {
     }
 };
 
+const getAllUsers = async () => {
+    try {
+        const userRepo = AppDataSource.getRepository(User);
+        const users = await userRepo.find();
+        return users;
+    } catch (error) {
+        throw error;
+    }
+};
+
 const userService = {
     deleteUserByID,
     findUserById,
-    getUserDetails
+    getUserDetails,
+    getAllUsers
 
 }
 
