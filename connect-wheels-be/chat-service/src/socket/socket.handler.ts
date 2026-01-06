@@ -103,7 +103,7 @@ export const setupSocketHandlers = (io: SocketIOServer) => {
       async (data: {
         chatId: string;
         content: string;
-        type?: "text" | "image" | "file";
+        type?: "text";
       }) => {
         try {
           const { type, chatId, content } = data;
@@ -280,6 +280,92 @@ export const setupSocketHandlers = (io: SocketIOServer) => {
         socket.emit("error", {
           message: "Failed to mark message as read",
           code: "MARK_MESSAGE_AS_READ_ERROR",
+        });
+      }
+    });
+
+    // ===== EVENT: UPDATE MESSAGE =====
+    socket.on("update_message", async (data: { messageId: string; content: string }) => {
+      try {
+        const { messageId, content } = data;
+        
+        if (!content || content.trim().length === 0) {
+          socket.emit("error", {
+            message: "Message content cannot be empty",
+            code: "INVALID_CONTENT",
+          });
+          return;
+        }
+        
+        if (content.length > 5000) {
+          socket.emit("error", {
+            message: "Message content exceeds maximum length",
+            code: "CONTENT_TOO_LONG",
+          });
+          return;
+        }
+        
+        // Find message and verify user is the sender
+        const message = await Message.findOne({
+          _id: messageId,
+          senderId: userId,
+        });
+        
+        if (!message) {
+          socket.emit("error", {
+            message: "Message not found or you can only edit your own messages",
+            code: "MESSAGE_NOT_FOUND",
+          });
+          return;
+        }
+        
+        // Verify user has access to this chat
+        const chat = await Chat.findOne({
+          _id: message.chatId,
+          participants: userId,
+        });
+        
+        if (!chat) {
+          socket.emit("error", {
+            message: "Chat not found or access denied",
+            code: "CHAT_NOT_FOUND",
+          });
+          return;
+        }
+        
+        // Update message
+        message.content = content;
+        message.editedAt = new Date();
+        await message.save();
+        
+        // Update chat's last message if this is the last message
+        if (chat.lastMessage && chat.lastMessage.senderId === userId) {
+          chat.lastMessage.content = content;
+          await chat.save();
+        }
+        
+        // Prepare message data for broadcast
+        const messageData = {
+          _id: message._id.toString(),
+          chatId: message.chatId.toString(),
+          senderId: message.senderId,
+          content: message.content,
+          type: message.type,
+          readBy: message.readBy,
+          createdAt: message.createdAt,
+          updatedAt: message.updatedAt,
+          editedAt: message.editedAt,
+        };
+        
+        // Broadcast to all participants in the chat (including sender)
+        io.to(`chat:${message.chatId.toString()}`).emit("message_updated", messageData);
+        
+        console.log(`✏️ Message ${messageId} updated by ${userId} in chat ${message.chatId}`);
+      } catch (error) {
+        console.error("Error updating message:", error);
+        socket.emit("error", {
+          message: "Failed to update message",
+          code: "UPDATE_MESSAGE_ERROR",
         });
       }
     });

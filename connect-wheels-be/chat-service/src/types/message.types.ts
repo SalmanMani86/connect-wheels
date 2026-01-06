@@ -54,6 +54,7 @@ export interface MessageResponseDto {
   readBy: string[];
   createdAt: Date;
   updatedAt: Date;
+  editedAt: Date | null;
 }
 
 /**

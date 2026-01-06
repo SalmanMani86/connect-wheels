@@ -41,7 +41,6 @@ router.get(
   validateRequest,
   messageController.getMessages
 );
-
 /**
  * PATCH /api/messages/:messageId/read
  * Mark a single message as read
@@ -74,7 +73,6 @@ router.patch(
   validateRequest,
   messageController.readAllMessages
 );
-
 /**
  * DELETE /api/messages/:messageId
  * Delete a message (only sender can delete)

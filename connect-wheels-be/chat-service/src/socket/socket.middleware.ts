@@ -39,8 +39,8 @@ export const socketAuthMiddleware = (
       return next(new Error('Authentication error: Invalid token'));
     }
 
-    // Attach userId to socket
-    socket.userId = decoded.userId;
+    // Attach userId to socket (always convert to string for consistency)
+    socket.userId = String(decoded.userId);
     next();
   } catch (err) {
     console.error('Socket authentication error:', err);

@@ -63,9 +63,10 @@ export class MessageController {
       };
 
       if (receiverId) {
-        // unreadCount is a Mongoose Map on the doc
-        const currentUnread = chat.unreadCount.get(receiverId) || 0;
-        chat.unreadCount.set(receiverId, currentUnread + 1);
+        // unreadCount is a Mongoose Map on the doc (requires string keys)
+        const receiverIdStr = String(receiverId);
+        const currentUnread = chat.unreadCount.get(receiverIdStr) || 0;
+        chat.unreadCount.set(receiverIdStr, currentUnread + 1);
       }
 
       await chat.save();
@@ -127,7 +128,7 @@ export class MessageController {
           },
         },
       };
-      res.status(200).json(response);
+      res.status(200).json({ response });
     } catch (error) {
       console.error("Error getting messages:", error);
       res.status(500).json({
@@ -176,8 +177,10 @@ export class MessageController {
         message.readBy.push(userId);
         await message.save();
       }
-      const unreadCount = chat.unreadCount.get(userId) || 0;
-      chat.unreadCount.set(userId, unreadCount - 1);
+      // Mongoose Maps require string keys
+      const userIdStr = String(userId);
+      const unreadCount = chat.unreadCount.get(userIdStr) || 0;
+      chat.unreadCount.set(userIdStr, Math.max(0, unreadCount - 1));
       chat.save();
 
       res.status(200).json({
@@ -216,7 +219,9 @@ export class MessageController {
         });
         return;
       }
-      chat.unreadCount.set(userId, 0);
+      // Mongoose Maps require string keys
+      const userIdStr = String(userId);
+      chat.unreadCount.set(userIdStr, 0);
       await chat.save();
       const result = await Message.updateMany(
         {
@@ -312,8 +317,9 @@ export class MessageController {
         return;
       }
 
-      // Update content
+      // Update content and set editedAt timestamp
       message.content = content;
+      message.editedAt = new Date();
       await message.save();
 
       res.status(200).json({
@@ -344,6 +350,7 @@ export class MessageController {
       readBy: Array.isArray(message.readBy) ? message.readBy : [],
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
+      editedAt: message.editedAt || null,
     };
   }
 }

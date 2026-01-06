@@ -53,7 +53,12 @@ export const loginUser = async (userDto: LoginUserDTO) => {
             { expiresIn: "1h" }
         );
 
-        return { message: "Login successful", token };
+        return { 
+            message: "Login successful", 
+            token,
+            userId: existingUser.id,
+            email: existingUser.email
+        };
     } catch (error: any) {
         console.error("loginUser error:", error);
         return { message: "Login failed", error: error.message || error };
