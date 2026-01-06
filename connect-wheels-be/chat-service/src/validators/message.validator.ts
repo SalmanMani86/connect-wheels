@@ -90,3 +90,26 @@ export const deleteMessageValidation = [
     .isMongoId()
     .withMessage('messageId must be a valid MongoDB ID')
 ];
+
+/**
+ * Validation for updating message
+ * PATCH /api/messages/:messageId
+ */
+export const updateMessageValidation = [
+  param('messageId')
+    .notEmpty()
+    .withMessage('messageId is required')
+    .isMongoId()
+    .withMessage('messageId must be a valid MongoDB ID'),
+
+  body('content')
+    .notEmpty()
+    .withMessage('Message content is required')
+    .isString()
+    .withMessage('Content must be a string')
+    .trim()
+    .isLength({ min: 1, max: 5000 })
+    .withMessage('Message must be between 1 and 5000 characters')
+    .matches(/^(?!.*<script|.*javascript:|.*onerror=).*$/i)
+    .withMessage('Message contains potentially dangerous content')
+];

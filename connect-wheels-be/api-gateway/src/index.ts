@@ -60,6 +60,14 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // ===== SERVICE ROUTING =====
 
+// Debug middleware to log all incoming requests
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api/')) {
+    console.log(`[GATEWAY] Incoming: ${req.method} ${req.path}`);
+  }
+  next();
+});
+
 // Auth Service Proxy
 const authProxyOptions: Options = {
   target: process.env.AUTH_SERVICE_URL || 'http://localhost:3000',
@@ -93,6 +101,40 @@ const authProxyOptions: Options = {
 };
 
 app.use('/api/auth', createProxyMiddleware(authProxyOptions));
+
+// User Service Proxy (part of Auth Service)
+const userProxyOptions: Options = {
+  target: process.env.AUTH_SERVICE_URL || 'http://localhost:3000',
+  changeOrigin: true,
+  timeout: 30000,
+  proxyTimeout: 30000,
+  secure: false,
+  logLevel: 'debug',
+  pathRewrite: {
+    '^/api/user': '/user', // Replace /api/user with /user (auth service uses /user prefix)
+  },
+  onProxyReq: (_proxyReq, req: Request) => {
+    console.log(
+      `[USER-SERVICE] ${req.method} ${req.url} → ${process.env.AUTH_SERVICE_URL}${req.url.replace('/api/user', '/user')}`
+    );
+  },
+  onProxyRes: (proxyRes, req: Request) => {
+    console.log(`[USER-SERVICE] Response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
+  },
+  onError: (err: Error, req: Request, res: Response) => {
+    console.error('[USER-SERVICE] Proxy Error:', err.message);
+    console.error('[USER-SERVICE] Request URL:', req.url);
+    if (!res.headersSent) {
+      res.status(503).json({
+        success: false,
+        message: 'User service is unavailable',
+        error: err.message,
+      });
+    }
+  },
+};
+
+app.use('/api/user', createProxyMiddleware(userProxyOptions));
 
 // Chat Service Proxy (REST API)
 const chatProxyOptions: Options = {
@@ -214,6 +256,9 @@ const server: Server = app.listen(PORT, () => {
   );
   console.log(
     `║  Auth API:        http://localhost:${PORT}/api/auth/*`.padEnd(61) + '║'
+  );
+  console.log(
+    `║  User API:        http://localhost:${PORT}/api/user/*`.padEnd(61) + '║'
   );
   console.log(
     `║  Chat API:        http://localhost:${PORT}/api/chat/*`.padEnd(61) + '║'

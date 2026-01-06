@@ -7,6 +7,7 @@ const userRouter = require('express').Router();
 
 
 // user routes
+userRouter.get('/all', userController.getAllUsers);
 userRouter.delete('/delete-user',[deleteUserValidator], userController.deleteUserByID);
 
 

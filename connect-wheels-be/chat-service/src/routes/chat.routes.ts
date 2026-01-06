@@ -8,12 +8,13 @@ import {
   deleteChatValidation,
   getChatsValidation
 } from "../validators/chat.validators";
+import { markChatAsReadValidation } from '../validators/message.validator';
 
 const router = Router();
 const chatController = new ChatController();
 
 // Apply authentication to all routes
-// router.use(authenticateJWT);
+ router.use(authenticateJWT);
 
 /**
  * POST /api/chats
@@ -42,6 +43,17 @@ router.get(
  * Get total unread message count
  */
 router.get('/unread/count', chatController.getUnreadCount);
+
+/**
+ * GET /api/chats/:chatId/read-all
+ * Read all messages in a chat
+ */
+router.patch(
+  '/:chatId/read-all',
+  markChatAsReadValidation,
+  validateRequest,
+  chatController.readAllMessages
+);
 
 /**
  * GET /api/chats/:chatId

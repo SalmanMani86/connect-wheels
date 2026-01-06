@@ -39,9 +39,12 @@ const loginUser = async (req: Request, res: Response) => {
 
   try {
     const result = await authService.loginUser(user);
-    return res
-      .status(200)
-      .json({ message: result.message, token: result.token });
+    return res.status(200).json({ 
+      message: result.message, 
+      token: result.token,
+      userId: result.userId,
+      email: result.email
+    });
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ message: "error login user", error: error });

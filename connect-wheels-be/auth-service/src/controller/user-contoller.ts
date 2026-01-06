@@ -5,6 +5,23 @@ import { validationResult } from 'express-validator';
 //import { publishEvent } from '../../../common/messaging/kafka/producer';
 
 
+const getAllUsers = async (req: Request, res: Response) => {
+    try {
+        const users = await userService.getAllUsers();
+        return res.status(200).json({
+            message: 'Users retrieved successfully',
+            users: users,
+            count: users.length
+        });
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        return res.status(500).json({
+            message: 'Error fetching users',
+            error: error
+        });
+    }
+};
+
 const deleteUserByID = async (req: Request, res: Response) => {
     // Validation request inputs
     const errors = validationResult(req);
@@ -38,6 +55,7 @@ const deleteUserByID = async (req: Request, res: Response) => {
 };
 
 export default {
+    getAllUsers,
     deleteUserByID
 };
 

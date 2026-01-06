@@ -5,7 +5,8 @@ export interface IMessage extends Document {
   senderId: string;
   createdAt: Date;
   updatedAt: Date;
-  type: "text" | "image" | "file";
+  editedAt?: Date;
+  type: "text";
   readBy: string[];
   content: string;
 }
@@ -28,12 +29,16 @@ const MessageSchema = new Schema<IMessage>(
     },
     type: {
       type: String,
-      enum: ["text", "file", "image"],
+      enum: ["text"],
       default: "text",
     },
     readBy: {
       type: [String],
       default: [],
+    },
+    editedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

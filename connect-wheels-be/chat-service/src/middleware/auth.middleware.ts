@@ -64,7 +64,8 @@ export const authenticateJWT = (
     }
 
     // Store userId in request for controller access
-    req.userId = decoded.userId;
+    // Always convert to string for consistency (PostgreSQL IDs are numbers, but we need strings for Mongoose Maps)
+    req.userId = String(decoded.userId);
     next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) {

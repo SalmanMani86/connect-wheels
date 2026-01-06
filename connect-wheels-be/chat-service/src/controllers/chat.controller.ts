@@ -56,11 +56,12 @@ export class ChatController {
       }
 
       // Create new chat
+      // Mongoose Maps require string keys
       const chat = await Chat.create({
         participants: [currentUserId, receiverId],
         unreadCount: {
-          [currentUserId]: 0,
-          [receiverId]: 0,
+          [String(currentUserId)]: 0,
+          [String(receiverId)]: 0,
         },
       });
 
@@ -224,8 +225,10 @@ export class ChatController {
         "unreadCount"
       );
 
+      // Mongoose Maps require string keys
+      const userIdStr = String(userId);
       const totalUnread = chats.reduce((sum, chat) => {
-        return sum + (chat.unreadCount.get(userId) || 0);
+        return sum + (chat.unreadCount.get(userIdStr) || 0);
       }, 0);
 
       res.status(200).json({
@@ -242,6 +245,45 @@ export class ChatController {
       });
     }
   };
+
+  /**
+   * Read all messages in a chat
+   * GET /api/chats/:chatId/read-all
+   */
+  readAllMessages = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const { chatId } = req.params;
+      const userId = req.userId!;
+      const chat = await Chat.findOne({
+        _id: chatId,
+        participants: userId,
+      });
+      if (!chat) {
+        res.status(404).json({
+          success: false,
+          message: "Chat not found or access denied",
+          code: "CHAT_NOT_FOUND",
+        });
+        return;
+      }
+      // Mongoose Maps require string keys
+      const userIdStr = String(userId);
+      chat.unreadCount.set(userIdStr, 0);
+      await chat.save();
+      res.status(200).json({
+        success: true,
+        message: "All messages marked as read"
+      });
+    } catch (error) {
+      console.error("Error reading all messages:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        code: "READ_ALL_MESSAGES_ERROR",
+      });
+    }
+  };
+      
 
   private mapChatToDto(chat: any): ChatResponseDto {
     return {

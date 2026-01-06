@@ -32,6 +32,16 @@ router.post(
 );
 
 /**
+ * GET /api/messages/:chatId
+ * Get all messages in a chat (paginated)
+ */
+router.get(
+  '/:chatId',
+  getMessagesValidation,
+  validateRequest,
+  messageController.getMessages
+);
+/**
  * PATCH /api/messages/:messageId/read
  * Mark a single message as read
  * NOTE: Must come before /:messageId to avoid route conflicts
@@ -41,6 +51,17 @@ router.patch(
   markMessageAsReadValidation,
   validateRequest,
   messageController.markMessageAsRead
+);
+
+/**
+ * PATCH /api/messages/:messageId
+ * Update message content (only sender can edit)
+*/
+router.patch(
+ '/:messageId',
+ updateMessageValidation,
+ validateRequest,
+ messageController.updateMessage
 );
 
 /**
@@ -54,7 +75,6 @@ router.patch(
   validateRequest,
   messageController.readAllMessages
 );
-
 /**
  * GET /api/messages/:chatId
  * Get all messages in a chat (paginated)
