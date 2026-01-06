@@ -13,7 +13,10 @@ import LoginPage from "./auth-pages/login-page";
 import SignupPage from "./auth-pages/sign-up-page";
 import NotFoundPage from "./pages/not-found";
 import DashboardPage from "./pages/dashboard";
+import ChatPage from "./pages/chat";
 import { ToastContainer } from "react-toastify";
+import { SocketProvider } from "./contexts/SocketContext";
+import UserDebug from "./components/debug/UserDebug";
 
 // 🔹 Route configuration
 const router = createBrowserRouter([
@@ -49,6 +52,10 @@ const router = createBrowserRouter([
         path: "dashboard",
         element: <DashboardPage />,
       },
+      {
+        path: "chat",
+        element: <ChatPage />,
+      },
     ],
   },
   {
@@ -61,8 +68,10 @@ const router = createBrowserRouter([
 function App() {
   return (
     <Provider store={store}>
-      <RouterProvider router={router} />
-      <ToastContainer />
+      <SocketProvider>
+        <RouterProvider router={router} />
+        <ToastContainer />
+      </SocketProvider>
     </Provider>
   );
 }

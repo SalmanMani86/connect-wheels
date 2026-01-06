@@ -35,7 +35,36 @@ const userSlice = createSlice({
   initialState: getInitialState(),
   reducers: {
     loginSuccess: (state, action) => {
-      const { token, ...userData } = action.payload;
+      console.log("loginSuccess called with:", action.payload);
+      
+      // Handle different payload structures
+      let token, userData;
+      
+      if (action.payload.token && action.payload.user) {
+        // Structure: { token, user: {...} }
+        token = action.payload.token;
+        userData = action.payload.user;
+      } else {
+        // Structure: { token, userId, email, ...otherData }
+        const { token: t, userId, email, message, ...rest } = action.payload;
+        token = t;
+        
+        // Map userId to id for consistency
+        userData = {
+          id: userId ,
+          email: email || rest.email,
+          ...rest,
+        };
+        
+        // Remove message if it exists (not part of user data)
+        if (userData.message) {
+          delete userData.message;
+        }
+      }
+      
+      console.log("Processed - token:", token ? token.substring(0, 20) + "..." : "NONE");
+      console.log("Processed - userData:", userData);
+      
       state.user = userData;
       state.token = token;
       state.isAuthenticated = true;

@@ -1,20 +1,10 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { createBaseQueryWithReauth } from "../baseQueryWithReauth";
 
-// Create the API slice
+// Create the API slice with auto-logout on 401
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:3000",
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from Redux state
-      const token = getState().user?.token || localStorage.getItem("token");
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-      headers.set("content-type", "application/json");
-      return headers;
-    },
-  }),
+  baseQuery: createBaseQueryWithReauth("http://localhost:8080/api"),
   tagTypes: ["User", "Auth"],
   endpoints: (builder) => ({
     // Auth endpoints
@@ -55,6 +45,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    // Get all users (for chat)
+    getAllUsers: builder.query({
+      query: () => ({
+        url: "/user/all",
+        method: "GET",
+      }),
+      providesTags: ["User"],
+    }),
   }),
 });
 
@@ -65,4 +63,6 @@ export const {
   useLoginWithGoogleQuery,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
+  useSearchUsersQuery,
+  useGetAllUsersQuery,
 } = apiSlice;
