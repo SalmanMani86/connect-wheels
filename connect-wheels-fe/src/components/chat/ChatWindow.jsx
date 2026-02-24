@@ -40,7 +40,11 @@ export default function ChatWindow({ chat, onEditMessage }) {
 
   const { data, isLoading, error, refetch } = useGetMessagesQuery(
     { chatId: chat?.id || "", page: 1, limit: 50 },
-    { skip: !chat }
+    { 
+      skip: !chat,
+      // Refetch when chat changes to get latest messages
+      refetchOnMountOrArgChange: true
+    }
   );
 
   const [deleteMessage] = useDeleteMessageMutation();
@@ -269,14 +273,63 @@ export default function ChatWindow({ chat, onEditMessage }) {
       );
     };
 
+    const handleMessageDeleted = (data) => {
+      console.log("🗑️ Received message deletion:", data);
+      const { messageId, chatId, lastMessage } = data;
+      
+      // Remove message from messages cache if this is the current chat
+      if (String(chatId) === String(chat.id)) {
+        console.log("✅ Deleted message belongs to current chat, removing from cache");
+        
+        dispatch(
+          chatApiSlice.util.updateQueryData(
+            "getMessages",
+            { chatId: chat.id, page: 1, limit: 50 },
+            (draft) => {
+              if (draft?.messages) {
+                draft.messages = draft.messages.filter(
+                  (msg) => String(msg.id) !== String(messageId)
+                );
+              }
+            }
+          )
+        );
+      }
+      
+      // Update chat list if lastMessage changed
+      if (lastMessage) {
+        console.log("✅ Updating chat list with new last message after deletion");
+        dispatch(
+          chatApiSlice.util.updateQueryData(
+            "getUserChats",
+            { page: 1, limit: 50 },
+            (draft) => {
+              if (draft?.chats) {
+                const chatToUpdate = draft.chats.find(
+                  (c) => String(c.id) === String(chatId)
+                );
+                
+                if (chatToUpdate) {
+                  chatToUpdate.lastMessage = lastMessage;
+                  chatToUpdate.updatedAt = new Date().toISOString();
+                }
+              }
+            }
+          )
+        );
+      }
+    };
+
     console.log("👂 Setting up socket listeners for chat:", chat.id);
     socket.on("new_message", handleNewMessage);
     socket.on("message_updated", handleMessageUpdated);
+    socket.on("message_deleted", handleMessageDeleted);
 
     return () => {
       console.log("🧹 Cleaning up socket listeners");
       socket.off("new_message", handleNewMessage);
       socket.off("message_updated", handleMessageUpdated);
+      socket.off("message_deleted", handleMessageDeleted);
     };
   }, [chat?.id, socket, refetch]);
 
@@ -317,7 +370,19 @@ export default function ChatWindow({ chat, onEditMessage }) {
   const handleDeleteMessage = async () => {
     if (selectedMessage) {
       try {
-        await deleteMessage(selectedMessage.id).unwrap();
+        // Use socket for real-time deletion if connected
+        if (socket?.isConnected) {
+          console.log("🗑️ Deleting message via socket...");
+          socket.deleteMessage({
+            messageId: selectedMessage.id,
+            chatId: chat.id,
+          });
+          console.log("✅ Message deletion sent via socket");
+        } else {
+          // Fallback to REST API if socket not connected
+          console.warn("⚠️ Socket not connected, using REST API fallback");
+          await deleteMessage(selectedMessage.id).unwrap();
+        }
         handleCloseMenu();
       } catch (error) {
         console.error("Failed to delete message:", error);
@@ -578,7 +643,7 @@ export default function ChatWindow({ chat, onEditMessage }) {
                                 fontSize: "0.65rem",
                                 opacity: isSender ? 0.7 : 0.5,
                                 fontStyle: "italic",
-                                color: "text.secondary",
+                                color: isSender ? "white" : "black",
                               }}
                             >
                               Edited

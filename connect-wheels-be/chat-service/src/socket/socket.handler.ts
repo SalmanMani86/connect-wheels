@@ -421,6 +421,99 @@ export const setupSocketHandlers = (io: SocketIOServer) => {
       }
     });
 
+    // ===== EVENT: DELETE MESSAGE =====
+    socket.on("delete_message", async (data: { messageId: string; chatId: string }) => {
+      try {
+        const { messageId, chatId } = data;
+        
+        // Find message and verify user is the sender
+        const message = await Message.findOne({
+          _id: messageId,
+          senderId: userId,
+        });
+        
+        if (!message) {
+          socket.emit("error", {
+            message: "Message not found or you can only delete your own messages",
+            code: "MESSAGE_NOT_FOUND",
+          });
+          return;
+        }
+        
+        // Verify user has access to this chat
+        const chat = await Chat.findOne({
+          _id: chatId,
+          participants: userId,
+        });
+        
+        if (!chat) {
+          socket.emit("error", {
+            message: "Chat not found or access denied",
+            code: "CHAT_NOT_FOUND",
+          });
+          return;
+        }
+        
+        // Store message info before deletion
+        const deletedMessageContent = message.content;
+        const deletedMessageSender = message.senderId;
+        
+        // Delete the message
+        await message.deleteOne();
+        
+        // Check if this was the last message in chat and update accordingly
+        const isLastMessage = 
+          chat.lastMessage && 
+          String(chat.lastMessage.content) === String(deletedMessageContent) &&
+          String(chat.lastMessage.senderId) === String(deletedMessageSender);
+        
+        let updatedLastMessage = null;
+        
+        if (isLastMessage) {
+          // Find the new last message (most recent message after deletion)
+          const newLastMessage = await Message.findOne({ chatId })
+            .sort({ createdAt: -1 })
+            .limit(1);
+          
+          if (newLastMessage) {
+            // Update chat with the new last message
+            chat.lastMessage = {
+              senderId: newLastMessage.senderId,
+              content: newLastMessage.content,
+              createdAt: newLastMessage.createdAt,
+            };
+            updatedLastMessage = chat.lastMessage;
+          } else {
+            // No messages left in chat
+            chat.lastMessage = {
+              senderId: "",
+              content: "",
+              createdAt: new Date(),
+            };
+            updatedLastMessage = chat.lastMessage;
+          }
+          
+          await chat.save();
+        }
+        
+        // Broadcast message deletion to all participants in the chat
+        io.to(`chat:${chatId}`).emit("message_deleted", {
+          messageId,
+          chatId,
+          deletedBy: userId,
+          lastMessage: updatedLastMessage, // Include updated lastMessage if changed
+        });
+        
+        console.log(`🗑️ Message ${messageId} deleted by ${userId} in chat ${chatId}`);
+      } catch (error) {
+        console.error("Error deleting message:", error);
+        socket.emit("error", {
+          message: "Failed to delete message",
+          code: "DELETE_MESSAGE_ERROR",
+        });
+      }
+    });
+
     // ===== EVENT: DISCONNECT =====
     socket.on("disconnect", () => {
       console.log(`❌ User disconnected: ${userId} (Socket: ${socket.id})`);

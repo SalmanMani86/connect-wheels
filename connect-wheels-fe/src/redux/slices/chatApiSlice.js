@@ -102,8 +102,12 @@ export const chatApiSlice = createApi({
         url: `/chat/messages/${chatId}/read-all`,
         method: "PATCH",
       }),
-      // Invalidate both Chat and UnreadCount to update UI
-      invalidatesTags: ["Chat", "UnreadCount"],
+      // Invalidate to force refetch and update UI
+      invalidatesTags: (result, error, chatId) => [
+        { type: "Message", id: chatId }, // Refetch messages for this chat
+        "Chat", // Update chat list
+        "UnreadCount" // Update unread count
+      ],
       // Optimistic update: immediately set unread count to 0 in cache
       async onQueryStarted(chatId, { dispatch, queryFulfilled, getState }) {
         const userId = getState().user?.user?.id;

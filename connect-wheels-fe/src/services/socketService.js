@@ -167,6 +167,18 @@ class SocketService {
   }
 
   /**
+   * Delete a message via socket
+   * @param {object} messageData - { messageId, chatId }
+   */
+  deleteMessage(messageData) {
+    if (!this.socket?.connected) {
+      console.warn("Socket not connected, cannot delete message");
+      return;
+    }
+    this.socket.emit("delete_message", messageData);
+  }
+
+  /**
    * Listen to socket events
    * @param {string} event - Event name
    * @param {function} callback - Callback function

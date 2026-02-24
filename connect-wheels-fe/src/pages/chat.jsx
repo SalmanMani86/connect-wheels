@@ -30,26 +30,8 @@ export default function ChatPage() {
     if (chat?.id) {
       dispatch(setCurrentChat(chat.id));
       
-      // Mark all messages in this chat as read
-      const userId = user?.id;
-      const unreadCount = chat?.unreadCount?.[userId] || 0;
-      
-      if (unreadCount === 0) {
-        // Count is already 0, no need to make API call
-        // But we still update the UI optimistically to ensure it stays at 0
-        dispatch(
-          chatApiSlice.util.updateQueryData("getUserChats", { page: 1, limit: 50 }, (draft) => {
-            if (draft?.chats) {
-              const chatToUpdate = draft.chats.find((c) => c.id === chat.id);
-              if (chatToUpdate && chatToUpdate.unreadCount) {
-                chatToUpdate.unreadCount[userId] = 0;
-              }
-            }
-          })
-        );
-        return;
-      }
-
+      // Always mark messages as read when opening a chat
+      // This ensures we fetch the latest messages even if unreadCount is 0
       try {
         await readAllMessages(chat.id).unwrap();
         console.log("✅ Marked all messages as read for chat:", chat.id);

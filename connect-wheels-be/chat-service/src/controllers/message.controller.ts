@@ -270,7 +270,46 @@ export class MessageController {
         return;
       }
 
+      const chatId = message.chatId;
+
+      // Delete the message
       await message.deleteOne();
+
+      // Update chat's lastMessage if this was the last message
+      const chat = await Chat.findById(chatId);
+      if (chat) {
+        // Check if the deleted message was the last message in chat
+        const isLastMessage = 
+          chat.lastMessage && 
+          String(chat.lastMessage.content) === String(message.content) &&
+          String(chat.lastMessage.senderId) === String(message.senderId);
+
+        if (isLastMessage) {
+          // Find the new last message (most recent message after deletion)
+          const newLastMessage = await Message.findOne({ chatId })
+            .sort({ createdAt: -1 })
+            .limit(1);
+
+          if (newLastMessage) {
+            // Update chat with the new last message
+            chat.lastMessage = {
+              senderId: newLastMessage.senderId,
+              content: newLastMessage.content,
+              createdAt: newLastMessage.createdAt,
+            };
+          } else {
+            // No messages left in chat, set lastMessage to null
+            chat.lastMessage = {
+              senderId: "",
+              content: "",
+              createdAt: new Date(),
+            };
+          }
+
+          await chat.save();
+          console.log(`✅ Updated chat ${chatId} lastMessage after deletion`);
+        }
+      }
 
       res.status(200).json({
         success: true,
