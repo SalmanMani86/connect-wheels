@@ -192,11 +192,12 @@ export default function MessageInput({ chatId, editingMessage, onCancelEdit }) {
 
   return (
     <Paper
-      elevation={3}
+      elevation={0}
       sx={{
         p: 2,
         borderRadius: 0,
-        backgroundColor: "white",
+        backgroundColor: "#334155",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
       }}
     >
       {/* Editing Indicator */}
@@ -208,20 +209,21 @@ export default function MessageInput({ chatId, editingMessage, onCancelEdit }) {
             justifyContent: "space-between",
             mb: 1,
             p: 1,
-            backgroundColor: "primary.lighter",
+            backgroundColor: "rgba(56, 189, 248, 0.2)",
             borderRadius: 1,
+            border: "1px solid rgba(56, 189, 248, 0.3)",
           }}
         >
           <Box>
-            <Box sx={{ fontSize: "0.75rem", color: "primary.main", fontWeight: 600 }}>
+            <Box sx={{ fontSize: "0.75rem", color: "#38bdf8", fontWeight: 600 }}>
               Editing message
             </Box>
-            <Box sx={{ fontSize: "0.85rem", color: "text.secondary" }}>
+            <Box sx={{ fontSize: "0.85rem", color: "#94a3b8" }}>
               {editingMessage.content.substring(0, 50)}
               {editingMessage.content.length > 50 ? "..." : ""}
             </Box>
           </Box>
-          <IconButton size="small" onClick={handleCancel}>
+          <IconButton size="small" onClick={handleCancel} sx={{ color: "#94a3b8" }}>
             <Close fontSize="small" />
           </IconButton>
         </Box>
@@ -240,17 +242,21 @@ export default function MessageInput({ chatId, editingMessage, onCancelEdit }) {
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
           disabled={isLoading}
+          slotProps={{
+            input: { sx: { color: "white" } },
+          }}
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 3,
-              backgroundColor: "#f5f5f5",
-              "& fieldset": { borderColor: "transparent" },
-              "&:hover fieldset": { borderColor: "primary.light" },
-              "&.Mui-focused fieldset": { borderColor: "primary.main" },
+              backgroundColor: "#1e293b",
+              color: "white",
+              "& fieldset": { borderColor: "rgba(255,255,255,0.15)" },
+              "&:hover fieldset": { borderColor: "rgba(255,255,255,0.25)" },
+              "&.Mui-focused fieldset": { borderColor: "#38bdf8" },
+              "& .MuiInputBase-input::placeholder": { color: "#64748b", opacity: 1 },
             },
           }}
         />
-
 
         {/* Send Button */}
         <Tooltip title={editingMessage ? "Update" : "Send"}>
@@ -259,14 +265,14 @@ export default function MessageInput({ chatId, editingMessage, onCancelEdit }) {
               onClick={handleSend}
               disabled={!message.trim() || isLoading}
               sx={{
-                backgroundColor: message.trim() ? "primary.main" : "grey.300",
+                backgroundColor: message.trim() ? "#38bdf8" : "#475569",
                 color: "white",
                 "&:hover": {
-                  backgroundColor: message.trim() ? "primary.dark" : "grey.400",
+                  backgroundColor: message.trim() ? "#0ea5e9" : "#64748b",
                 },
                 "&:disabled": {
-                  backgroundColor: "grey.300",
-                  color: "grey.500",
+                  backgroundColor: "#475569",
+                  color: "#64748b",
                 },
               }}
             >
@@ -287,7 +293,7 @@ export default function MessageInput({ chatId, editingMessage, onCancelEdit }) {
             mt: 1,
             textAlign: "right",
             fontSize: "0.75rem",
-            color: message.length > 5000 ? "error.main" : "text.secondary",
+            color: message.length > 5000 ? "#f87171" : "#94a3b8",
           }}
         >
           {message.length} / 5000

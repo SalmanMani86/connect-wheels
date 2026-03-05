@@ -20,8 +20,8 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
       <ListItem
         disablePadding
         sx={{
-          backgroundColor: isSelected ? "primary.lighter" : "transparent",
-          "&:hover": { backgroundColor: isSelected ? "primary.lighter" : "#f0f0f0" },
+          backgroundColor: isSelected ? "rgba(56, 189, 248, 0.15)" : "transparent",
+          "&:hover": { backgroundColor: isSelected ? "rgba(56, 189, 248, 0.2)" : "rgba(255,255,255,0.05)" },
         }}
       >
         <ListItemButton
@@ -41,7 +41,7 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
                 "& .MuiBadge-badge": {
                   backgroundColor: "#44b700",
                   color: "#44b700",
-                  boxShadow: "0 0 0 2px white",
+                  boxShadow: "0 0 0 2px #1e293b",
                 },
               }}
             >
@@ -49,7 +49,8 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
                 sx={{
                   width: 48,
                   height: 48,
-                  backgroundColor: "primary.main",
+                  backgroundColor: "#475569",
+                  color: "white",
                   fontWeight: 600,
                 }}
               >
@@ -69,7 +70,7 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
                   component="span"
                   sx={{
                     fontWeight: unreadCount > 0 ? 700 : 500,
-                    color: "text.primary",
+                    color: "white",
                   }}
                 >
                   {otherUserName}
@@ -79,7 +80,7 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
                     variant="caption"
                     component="span"
                     sx={{
-                      color: unreadCount > 0 ? "primary.main" : "text.secondary",
+                      color: unreadCount > 0 ? "#38bdf8" : "#94a3b8",
                       fontWeight: unreadCount > 0 ? 600 : 400,
                     }}
                   >
@@ -95,7 +96,7 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
                   variant="body2"
                   component="span"
                   sx={{
-                    color: unreadCount > 0 ? "text.primary" : "text.secondary",
+                    color: unreadCount > 0 ? "#e2e8f0" : "#94a3b8",
                     fontWeight: unreadCount > 0 ? 600 : 400,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -108,9 +109,9 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
                 {unreadCount > 0 && (
                   <Badge
                     badgeContent={unreadCount}
-                    color="primary"
                     sx={{
                       "& .MuiBadge-badge": {
+                        backgroundColor: "#38bdf8",
                         fontWeight: 600,
                         fontSize: "0.7rem",
                       },
@@ -122,7 +123,7 @@ export default function ChatListItem({ chat, otherUserId, unreadCount, isSelecte
           />
         </ListItemButton>
       </ListItem>
-      <Divider />
+      <Divider sx={{ borderColor: "rgba(255,255,255,0.06)" }} />
     </Box>
   );
 }

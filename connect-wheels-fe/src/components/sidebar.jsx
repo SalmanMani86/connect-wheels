@@ -6,15 +6,14 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   Badge,
 } from "@mui/material";
 import {
   Dashboard,
   Chat,
-  Person,
-  DirectionsCar,
   Settings,
+  Home,
+  Garage,
 } from "@mui/icons-material";
 import { useGetUnreadCountQuery } from "../redux/slices/chatApiSlice";
 
@@ -25,24 +24,26 @@ export default function Sidebar() {
 
   const menuItems = [
     { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
+    { text: "Feed", icon: <Home />, path: "/feed" },
+    { text: "Garages", icon: <Garage />, path: "/garages" },
     { text: "Messages", icon: <Chat />, path: "/chat", badge: unreadCount },
-    { text: "Profile", icon: <Person />, path: "/profile" },
-    { text: "Rides", icon: <DirectionsCar />, path: "/rides" },
     { text: "Settings", icon: <Settings />, path: "/settings" },
   ];
 
   return (
     <Box
       sx={{
-        width: 240,
+        width: 260,
         height: "100%",
-        backgroundColor: "white",
-        borderRight: 1,
-        borderColor: "divider",
-        pt: 2,
+        background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+        borderRight: "1px solid rgba(255,255,255,0.08)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
       }}
     >
-      <List sx={{ px: 1 }}>
+      {/* Navigation */}
+      <List sx={{ px: 1.5, pt: 2, pb: 1, flex: 1, overflow: "auto" }}>
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -52,17 +53,17 @@ export default function Sidebar() {
                 to={item.path}
                 sx={{
                   borderRadius: 2,
-                  backgroundColor: isActive ? "primary.lighter" : "transparent",
-                  color: isActive ? "primary.main" : "text.primary",
+                  backgroundColor: isActive ? "rgba(56, 189, 248, 0.15)" : "transparent",
+                  color: isActive ? "#38bdf8" : "rgba(255,255,255,0.85)",
                   "&:hover": {
-                    backgroundColor: isActive ? "primary.lighter" : "grey.100",
+                    backgroundColor: isActive ? "rgba(56, 189, 248, 0.2)" : "rgba(255,255,255,0.06)",
                   },
                 }}
               >
                 <ListItemIcon
                   sx={{
                     minWidth: 40,
-                    color: isActive ? "primary.main" : "text.secondary",
+                    color: "inherit",
                   }}
                 >
                   {item.badge > 0 ? (
@@ -75,17 +76,13 @@ export default function Sidebar() {
                 </ListItemIcon>
                 <ListItemText
                   primary={item.text}
-                  primaryTypographyProps={{
-                    fontWeight: isActive ? 600 : 400,
-                    fontSize: "0.95rem",
-                  }}
+                  primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: isActive ? 600 : 400 }}
                 />
               </ListItemButton>
             </ListItem>
           );
         })}
       </List>
-      <Divider sx={{ my: 2 }} />
     </Box>
   );
 }

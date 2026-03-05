@@ -1,8 +1,7 @@
 import { Request, Response } from 'express';
-import { USER_DELETED } from '../../../common/messaging/kafka/topics';
 import userService from '../service/user-service';
 import { validationResult } from 'express-validator';
-//import { publishEvent } from '../../../common/messaging/kafka/producer';
+import { authenticateJWT, AuthRequest } from '../../../common/auth-middleware/auth_middleware';
 
 
 const getAllUsers = async (req: Request, res: Response) => {
@@ -54,8 +53,56 @@ const deleteUserByID = async (req: Request, res: Response) => {
     }
 };
 
+const getProfile = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user?.userId ?? req.user?.id;
+        if (!userId) return res.status(401).json({ message: 'Authentication required' });
+        const user = await userService.getProfile(Number(userId));
+        return res.status(200).json(user);
+    } catch (error: any) {
+        if (error?.message === 'User not found') return res.status(404).json({ message: error.message });
+        console.error('getProfile error:', error);
+        return res.status(500).json({ message: 'Error fetching profile' });
+    }
+};
+
+const updateProfile = async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    try {
+        const userId = req.user?.userId ?? req.user?.id;
+        if (!userId) return res.status(401).json({ message: 'Authentication required' });
+        const data = { firstName: req.body.firstName, lastName: req.body.lastName };
+        const user = await userService.updateProfile(Number(userId), data);
+        return res.status(200).json(user);
+    } catch (error: any) {
+        if (error?.message === 'User not found') return res.status(404).json({ message: error.message });
+        console.error('updateProfile error:', error);
+        return res.status(500).json({ message: 'Error updating profile' });
+    }
+};
+
+const changePassword = async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+    try {
+        const userId = req.user?.userId ?? req.user?.id;
+        if (!userId) return res.status(401).json({ message: 'Authentication required' });
+        const { currentPassword, newPassword } = req.body;
+        await userService.changePassword(Number(userId), currentPassword || '', newPassword);
+        return res.status(200).json({ message: 'Password updated successfully' });
+    } catch (error: any) {
+        if (error?.message === 'Current password is incorrect') return res.status(400).json({ message: error.message });
+        console.error('changePassword error:', error);
+        return res.status(500).json({ message: error?.message || 'Error changing password' });
+    }
+};
+
 export default {
     getAllUsers,
-    deleteUserByID
+    deleteUserByID,
+    getProfile,
+    updateProfile,
+    changePassword,
 };
 

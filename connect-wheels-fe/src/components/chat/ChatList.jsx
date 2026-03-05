@@ -68,31 +68,29 @@ export default function ChatList({ selectedChatId, onChatSelect, onNewChat }) {
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        borderRight: 1,
-        borderColor: "divider",
-        backgroundColor: "#fafafa",
+        borderRight: "1px solid rgba(255,255,255,0.08)",
+        backgroundColor: "#1e293b",
       }}
     >
       {/* Header */}
       <Box
         sx={{
           p: 2,
-          backgroundColor: "white",
-          borderBottom: 1,
-          borderColor: "divider",
+          backgroundColor: "#334155",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.main" }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "#38bdf8" }}>
             Messages
           </Typography>
           <IconButton
             size="small"
             onClick={onNewChat}
             sx={{
-              backgroundColor: "primary.main",
+              backgroundColor: "#38bdf8",
               color: "white",
-              "&:hover": { backgroundColor: "primary.dark" },
+              "&:hover": { backgroundColor: "#0ea5e9" },
             }}
           >
             <Add />
@@ -110,16 +108,18 @@ export default function ChatList({ selectedChatId, onChatSelect, onNewChat }) {
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: "text.secondary", fontSize: 20 }} />
+                  <Search sx={{ color: "#94a3b8", fontSize: 20 }} />
                 </InputAdornment>
               ),
             },
           }}
           sx={{
             "& .MuiOutlinedInput-root": {
-              borderRadius: 3,
-              backgroundColor: "#f5f5f5",
-              "& fieldset": { border: "none" },
+              borderRadius: 2,
+              backgroundColor: "rgba(0,0,0,0.2)",
+              color: "white",
+              "& fieldset": { borderColor: "rgba(255,255,255,0.2)" },
+              "& input::placeholder": { color: "rgba(255,255,255,0.5)" },
             },
           }}
         />
@@ -129,20 +129,20 @@ export default function ChatList({ selectedChatId, onChatSelect, onNewChat }) {
       <Box sx={{ flex: 1, overflow: "auto" }}>
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress />
+            <CircularProgress sx={{ color: "#38bdf8" }} />
           </Box>
         ) : error ? (
           <Box sx={{ p: 3, textAlign: "center" }}>
-            <Typography color="error" variant="body2">
+            <Typography sx={{ color: "#f87171" }} variant="body2">
               Failed to load chats
             </Typography>
           </Box>
         ) : filteredChats.length === 0 ? (
           <Box sx={{ p: 3, textAlign: "center" }}>
-            <Typography color="text.secondary" variant="body2">
+            <Typography sx={{ color: "#94a3b8" }} variant="body2">
               {searchQuery ? "No chats found" : "No conversations yet"}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+            <Typography variant="caption" sx={{ color: "#64748b", mt: 1, display: "block" }}>
               Start a new conversation
             </Typography>
           </Box>

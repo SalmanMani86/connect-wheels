@@ -37,8 +37,8 @@ AppDataSource.initialize()
       console.error("Server error:", err);
     });
 
-    // Start gRPC server
-    // startGrpcServer();
+    // Start gRPC server (garage service uses this to verify users)
+    startGrpcServer();
   })
   .catch((err) => {
     console.error("Error during Data Source initialization:", err);

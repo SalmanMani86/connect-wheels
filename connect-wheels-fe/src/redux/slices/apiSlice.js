@@ -45,6 +45,13 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+    changePassword: builder.mutation({
+      query: (body) => ({
+        url: "/user/change-password",
+        method: "PUT",
+        body,
+      }),
+    }),
     // Get all users (for chat)
     getAllUsers: builder.query({
       query: () => ({
@@ -63,6 +70,6 @@ export const {
   useLoginWithGoogleQuery,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,
-  useSearchUsersQuery,
+  useChangePasswordMutation,
   useGetAllUsersQuery,
 } = apiSlice;

@@ -442,14 +442,14 @@ export default function ChatWindow({ chat, onEditMessage }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#1e293b",
         }}
       >
         <Box sx={{ textAlign: "center" }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
+          <Typography variant="h6" sx={{ color: "#94a3b8" }} gutterBottom>
             Select a conversation
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: "#64748b" }}>
             Choose a chat from the left to start messaging
           </Typography>
         </Box>
@@ -466,14 +466,15 @@ export default function ChatWindow({ chat, onEditMessage }) {
     }}>
       {/* Chat Header */}
       <Paper
-        elevation={1}
+        elevation={0}
         sx={{
           p: 2,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           borderRadius: 0,
-          backgroundColor: "white",
+          backgroundColor: "#334155",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -481,24 +482,25 @@ export default function ChatWindow({ chat, onEditMessage }) {
             sx={{
               width: 45,
               height: 45,
-              backgroundColor: "primary.main",
+              backgroundColor: "#475569",
+              color: "white",
               fontWeight: 600,
             }}
           >
             {otherUserInitials}
           </Avatar>
           <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "white" }}>
               {otherUserName}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: "#94a3b8" }}>
               Online
             </Typography>
           </Box>
         </Box>
 
         <Box sx={{ display: "flex", gap: 1 }}>
-          <IconButton size="small">
+          <IconButton size="small" sx={{ color: "#94a3b8" }}>
             <Info fontSize="small" />
           </IconButton>
         </Box>
@@ -508,25 +510,25 @@ export default function ChatWindow({ chat, onEditMessage }) {
       <Box
         sx={{
           flex: 1,
-          minHeight: 0, // Important: allows flex child to shrink
+          minHeight: 0,
           overflow: "auto",
           p: 2,
-          backgroundColor: "#f8f9fa",
-          backgroundImage: "linear-gradient(to bottom, #fafafa 0%, #f0f0f0 100%)",
+          backgroundColor: "#0f172a",
+          backgroundImage: "linear-gradient(to bottom, #1e293b 0%, #0f172a 100%)",
         }}
       >
         {isLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress />
+            <CircularProgress sx={{ color: "#38bdf8" }} />
           </Box>
         ) : error ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography color="error">Failed to load messages</Typography>
+            <Typography sx={{ color: "#f87171" }}>Failed to load messages</Typography>
           </Box>
         ) : messages.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
-            <Typography color="text.secondary">No messages yet</Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography sx={{ color: "#94a3b8" }}>No messages yet</Typography>
+            <Typography variant="caption" sx={{ color: "#64748b", display: "block" }}>
               Send a message to start the conversation
             </Typography>
           </Box>
@@ -549,8 +551,8 @@ export default function ChatWindow({ chat, onEditMessage }) {
                         label={formatDateDivider(message.createdAt)}
                         size="small"
                         sx={{
-                          backgroundColor: "rgba(0,0,0,0.08)",
-                          color: "text.secondary",
+                          backgroundColor: "rgba(255,255,255,0.1)",
+                          color: "#94a3b8",
                           fontSize: "0.75rem",
                         }}
                       />
@@ -574,18 +576,17 @@ export default function ChatWindow({ chat, onEditMessage }) {
                       }}
                     >
                       <Paper
-                        elevation={1}
+                        elevation={0}
                         sx={{
                           p: 1.5,
-                          backgroundColor: isSender ? "primary.main" : "white",
-                          color: isSender ? "white" : "text.primary",
+                          backgroundColor: isSender ? "#38bdf8" : "#334155",
+                          color: "white",
                           borderRadius: 2,
                           borderTopRightRadius: isSender ? 0 : 2,
                           borderTopLeftRadius: isSender ? 2 : 0,
+                          border: isSender ? "none" : "1px solid rgba(255,255,255,0.1)",
                           position: "relative",
-                          "&:hover .message-actions": {
-                            opacity: 1,
-                          },
+                          "&:hover .message-actions": { opacity: 1 },
                         }}
                       >
                         {/* Message Actions */}
@@ -641,9 +642,9 @@ export default function ChatWindow({ chat, onEditMessage }) {
                               variant="caption"
                               sx={{
                                 fontSize: "0.65rem",
-                                opacity: isSender ? 0.7 : 0.5,
+                                opacity: 0.8,
                                 fontStyle: "italic",
-                                color: isSender ? "white" : "black",
+                                color: "inherit",
                               }}
                             >
                               Edited
@@ -675,12 +676,22 @@ export default function ChatWindow({ chat, onEditMessage }) {
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleCloseMenu}
+        slotProps={{
+          paper: {
+            sx: {
+              backgroundColor: "#334155",
+              color: "white",
+              "& .MuiMenuItem-root": { color: "white" },
+              "& .MuiMenuItem-root:hover": { backgroundColor: "rgba(255,255,255,0.1)" },
+            },
+          },
+        }}
       >
         <MenuItem onClick={handleEditMessage}>
           <Edit fontSize="small" sx={{ mr: 1 }} />
           Edit
         </MenuItem>
-        <MenuItem onClick={handleDeleteMessage} sx={{ color: "error.main" }}>
+        <MenuItem onClick={handleDeleteMessage} sx={{ color: "#f87171" }}>
           <Delete fontSize="small" sx={{ mr: 1 }} />
           Delete
         </MenuItem>

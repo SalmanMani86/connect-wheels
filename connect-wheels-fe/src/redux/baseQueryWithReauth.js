@@ -10,7 +10,9 @@ export const createBaseQueryWithReauth = (baseUrl) => {
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }
-      headers.set("content-type", "application/json");
+      // Do NOT force content-type here — fetchBaseQuery sets application/json
+      // automatically for plain objects, and lets the browser set multipart
+      // boundary when the body is FormData.
       return headers;
     },
   });

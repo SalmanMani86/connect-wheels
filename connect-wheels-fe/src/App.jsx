@@ -14,7 +14,14 @@ import SignupPage from "./auth-pages/sign-up-page";
 import NotFoundPage from "./pages/not-found";
 import DashboardPage from "./pages/dashboard";
 import ChatPage from "./pages/chat";
+import SettingsPage from "./pages/settings";
+import GaragesPage from "./pages/garages";
+import FeedPage from "./pages/feed";
+import GarageDetailPage from "./pages/garage-detail";
+import CarDetailPage from "./pages/car-detail";
+import PostDetailPage from "./pages/post-detail";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { SocketProvider } from "./contexts/SocketContext";
 import UserDebug from "./components/debug/UserDebug";
 
@@ -46,16 +53,45 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/dashboard" replace />,
+        element: <Navigate to="/feed" replace />,
       },
       {
         path: "dashboard",
         element: <DashboardPage />,
       },
       {
+        path: "feed",
+        element: <FeedPage />,
+      },
+      {
+        path: "feed/trending",
+        element: <FeedPage trending />,
+      },
+      {
+        path: "garages",
+        element: <GaragesPage />,
+      },
+      {
+        path: "garages/:garageId",
+        element: <GarageDetailPage />,
+      },
+      {
+        path: "garages/:garageId/cars/:carId",
+        element: <CarDetailPage />,
+      },
+      {
+        path: "posts/:postId",
+        element: <PostDetailPage />,
+      },
+      {
         path: "chat",
         element: <ChatPage />,
       },
+      {
+        path: "settings",
+        element: <SettingsPage />,
+      },
+      { path: "profile", element: <Navigate to="/settings" replace /> },
     ],
   },
   {
@@ -70,7 +106,7 @@ function App() {
     <Provider store={store}>
       <SocketProvider>
         <RouterProvider router={router} />
-        <ToastContainer />
+        <ToastContainer theme="dark" position="top-right" limit={3} />
       </SocketProvider>
     </Provider>
   );

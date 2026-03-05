@@ -16,8 +16,12 @@ export const startGrpcServer = () => {
     CheckUser: checkUser,
   });
 
-  server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), () => {
-    console.log('🚀 gRPC Server running on port 50051');
+  server.bindAsync('0.0.0.0:50051', grpc.ServerCredentials.createInsecure(), (err, port) => {
+    if (err) {
+      console.error('gRPC server bind failed:', err);
+      return;
+    }
+    console.log('🚀 gRPC Server running on port', port || 50051);
     server.start();
   });
 };

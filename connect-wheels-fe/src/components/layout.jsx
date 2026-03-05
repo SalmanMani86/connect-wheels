@@ -14,8 +14,8 @@ export default function Layout() {
           sx={{
             flex: 1,
             overflow: "auto",
-            backgroundColor: "#f5f5f5",
-            position: "relative", // Added for absolute positioning of children
+            backgroundColor: "#0f172a",
+            position: "relative",
           }}
         >
           <Outlet />

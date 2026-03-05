@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { Car } from './car';
 import { UserGarageFollow } from './user-garage-follow';
 
@@ -10,18 +17,39 @@ export class Garage {
   @Column({ unique: true })
   name!: string;
 
+  @Column({ type: 'text', nullable: true })
+  description!: string;
+
   @Column({ nullable: true })
   pictureUrl!: string;
+
+  @Column({ nullable: true })
+  coverImageUrl!: string;
+
+  @Column({ nullable: true })
+  location!: string;
 
   @Column()
   ownerId!: number;
 
+  @Column({ default: 0 })
+  followersCount!: number;
+
+  @Column({ default: 0 })
+  postsCount!: number;
+
+  @Column({ default: 0 })
+  carsCount!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 
-  @OneToMany(() => Car, car => car.garage)
+  @UpdateDateColumn()
+  updatedAt!: Date;
+
+  @OneToMany(() => Car, (car) => car.garage)
   cars!: Car[];
 
-  @OneToMany(() => UserGarageFollow, follow => follow.garage)
+  @OneToMany(() => UserGarageFollow, (follow) => follow.garage)
   followers!: UserGarageFollow[];
 }

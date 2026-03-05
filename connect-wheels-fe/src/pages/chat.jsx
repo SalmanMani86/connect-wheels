@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Box } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import ChatList from "../components/chat/ChatList";
 import ChatWindow from "../components/chat/ChatWindow";
@@ -13,11 +14,23 @@ import {
 import { setCurrentChat, clearCurrentChat } from "../redux/slices/chatStateSlice";
 
 export default function ChatPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [selectedChat, setSelectedChat] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [newChatDialogOpen, setNewChatDialogOpen] = useState(false);
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.user);
+
+  // When arriving from garage "Message Owner" - open that chat
+  useEffect(() => {
+    const openChat = location.state?.openChat;
+    if (openChat?.id) {
+      setSelectedChat(openChat);
+      dispatch(setCurrentChat(openChat.id));
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.openChat, location.pathname, dispatch, navigate]);
   const [createChat, { isLoading: isCreatingChat, error: createChatError }] =
     useCreateChatMutation();
   const [readAllMessages] = useReadAllMessagesMutation();
@@ -98,7 +111,7 @@ export default function ChatPage() {
         right: 0,
         bottom: 0,
         display: "flex",
-        backgroundColor: "#f5f5f5",
+        backgroundColor: "#0f172a",
       }}
     >
       {/* Chat List - Left Sidebar */}
@@ -106,9 +119,8 @@ export default function ChatPage() {
         sx={{
           width: 360,
           flexShrink: 0,
-          borderRight: 1,
-          borderColor: "divider",
-          minHeight: 0, // Important: allows flex child to shrink
+          borderRight: "1px solid rgba(255,255,255,0.08)",
+          minHeight: 0,
         }}
       >
         <ChatList

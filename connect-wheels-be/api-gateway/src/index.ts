@@ -61,7 +61,7 @@ app.get('/health', (_req: Request, res: Response) => {
 // ===== SERVICE ROUTING =====
 
 // Debug middleware to log all incoming requests
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   if (req.path.startsWith('/api/')) {
     console.log(`[GATEWAY] Incoming: ${req.method} ${req.path}`);
   }

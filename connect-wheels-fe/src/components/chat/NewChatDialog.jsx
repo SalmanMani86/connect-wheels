@@ -96,8 +96,21 @@ export default function NewChatDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ fontWeight: 600, pb: 1 }}>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="sm"
+      fullWidth
+      slotProps={{
+        paper: {
+          sx: {
+            backgroundColor: "#1e293b",
+            border: "1px solid rgba(255,255,255,0.08)",
+          },
+        },
+      }}
+    >
+      <DialogTitle sx={{ fontWeight: 600, pb: 1, color: "white" }}>
         Start New Conversation
       </DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
@@ -118,15 +131,20 @@ export default function NewChatDialog({
             input: {
               startAdornment: (
                 <InputAdornment position="start">
-                  <Search sx={{ color: "text.secondary" }} />
+                  <Search sx={{ color: "#94a3b8" }} />
                 </InputAdornment>
               ),
+              sx: { color: "white" },
             },
           }}
           sx={{
             mb: 2,
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
+              backgroundColor: "#334155",
+              "& fieldset": { borderColor: "rgba(255,255,255,0.15)" },
+              "&:hover fieldset": { borderColor: "rgba(255,255,255,0.25)" },
+              "&.Mui-focused fieldset": { borderColor: "#38bdf8" },
             },
           }}
         />
@@ -134,15 +152,19 @@ export default function NewChatDialog({
         {/* Selected User Chip */}
         {selectedUser && (
           <Box sx={{ mb: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+            <Typography variant="caption" sx={{ mb: 1, display: "block", color: "#94a3b8" }}>
               Selected:
             </Typography>
             <Chip
-              avatar={<Avatar>{getUserInitials(selectedUser)}</Avatar>}
+              avatar={<Avatar sx={{ bgcolor: "#475569" }}>{getUserInitials(selectedUser)}</Avatar>}
               label={getUserDisplayName(selectedUser)}
               onDelete={() => setSelectedUser(null)}
-              color="primary"
-              sx={{ fontWeight: 500 }}
+              sx={{
+                fontWeight: 500,
+                backgroundColor: "rgba(56, 189, 248, 0.2)",
+                color: "#38bdf8",
+                "& .MuiChip-deleteIcon": { color: "#94a3b8" },
+              }}
             />
           </Box>
         )}
@@ -152,23 +174,22 @@ export default function NewChatDialog({
           sx={{
             maxHeight: 400,
             overflow: "auto",
-            border: 1,
-            borderColor: "divider",
+            border: "1px solid rgba(255,255,255,0.1)",
             borderRadius: 2,
-            backgroundColor: "#fafafa",
+            backgroundColor: "#0f172a",
           }}
         >
           {isLoadingUsers ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-              <CircularProgress size={32} />
+              <CircularProgress size={32} sx={{ color: "#38bdf8" }} />
             </Box>
           ) : filteredUsers.length === 0 ? (
             <Box sx={{ py: 4, px: 2, textAlign: "center" }}>
-              <Person sx={{ fontSize: 48, color: "text.secondary", mb: 1 }} />
-              <Typography color="text.secondary" variant="body2">
+              <Person sx={{ fontSize: 48, color: "#64748b", mb: 1 }} />
+              <Typography variant="body2" sx={{ color: "#94a3b8" }}>
                 {searchQuery ? "No users found" : "No users available"}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{ color: "#64748b" }}>
                 {searchQuery ? "Try a different search term" : ""}
               </Typography>
             </Box>
@@ -179,8 +200,7 @@ export default function NewChatDialog({
                   key={user.id}
                   disablePadding
                   sx={{
-                    borderBottom: 1,
-                    borderColor: "divider",
+                    borderBottom: "1px solid rgba(255,255,255,0.06)",
                     "&:last-child": { borderBottom: 0 },
                   }}
                 >
@@ -190,17 +210,17 @@ export default function NewChatDialog({
                     sx={{
                       py: 1.5,
                       "&.Mui-selected": {
-                        backgroundColor: "primary.lighter",
-                        "&:hover": {
-                          backgroundColor: "primary.lighter",
-                        },
+                        backgroundColor: "rgba(56, 189, 248, 0.15)",
+                        "&:hover": { backgroundColor: "rgba(56, 189, 248, 0.2)" },
                       },
+                      "&:hover": { backgroundColor: "rgba(255,255,255,0.05)" },
                     }}
                   >
                     <ListItemAvatar>
                       <Avatar
                         sx={{
-                          backgroundColor: "primary.main",
+                          backgroundColor: "#475569",
+                          color: "white",
                           fontWeight: 600,
                         }}
                       >
@@ -209,12 +229,12 @@ export default function NewChatDialog({
                     </ListItemAvatar>
                     <ListItemText
                       primary={
-                        <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 500, color: "white" }}>
                           {getUserDisplayName(user)}
                         </Typography>
                       }
                       secondary={
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{ color: "#94a3b8" }}>
                           {user.email} • ID: {user.id}
                         </Typography>
                       }
@@ -226,19 +246,24 @@ export default function NewChatDialog({
           )}
         </Box>
 
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 2, display: "block" }}>
+        <Typography variant="caption" sx={{ mt: 2, display: "block", color: "#64748b" }}>
           Select a user from the list to start chatting
         </Typography>
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button onClick={handleClose} disabled={isLoading}>
+      <DialogActions sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <Button onClick={handleClose} disabled={isLoading} sx={{ color: "#94a3b8" }}>
           Cancel
         </Button>
         <Button
           onClick={handleCreate}
           variant="contained"
           disabled={!selectedUser || isLoading}
-          startIcon={isLoading ? <CircularProgress size={16} /> : null}
+          startIcon={isLoading ? <CircularProgress size={16} sx={{ color: "white" }} /> : null}
+          sx={{
+            backgroundColor: "#38bdf8",
+            "&:hover": { backgroundColor: "#0ea5e9" },
+            "&:disabled": { backgroundColor: "#475569", color: "#64748b" },
+          }}
         >
           {isLoading ? "Creating..." : "Start Chat"}
         </Button>

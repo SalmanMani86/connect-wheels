@@ -4,12 +4,12 @@ import {
   Typography,
   Button,
   Box,
-  Container,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../redux/slices/userSlice";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const dispatch = useDispatch();
@@ -24,45 +24,45 @@ export default function Navbar() {
   return (
     <AppBar
       position="static"
-      elevation={2} // ← Increased elevation for subtle shadow
+      elevation={0}
       sx={{
-        backgroundColor: "white",
-        borderBottom: 1,
-        borderColor: "grey.200",
-        background: "linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)", // ← Subtle gradient
+        background: "linear-gradient(90deg, #0f172a 0%, #1e293b 100%)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
       }}
     >
-      <Container maxWidth="xl">
-        <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
-          {/* Logo/Brand */}
+      <Box sx={{ px: { xs: 2, sm: 3 }, maxWidth: "100%" }}>
+        <Toolbar
+          disableGutters
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            minHeight: 64,
+            py: 0,
+          }}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <DirectionsCarIcon sx={{ color: "primary.main", fontSize: 32 }} />
+            <DirectionsCarIcon sx={{ color: "#38bdf8", fontSize: 28 }} />
             <Typography
               variant="h6"
               component={Link}
               to="/"
               sx={{
-                color: "primary.main",
+                color: "white",
                 textDecoration: "none",
                 fontWeight: 700,
-                "&:hover": {
-                  color: "primary.dark",
-                },
+                "&:hover": { color: "#38bdf8" },
               }}
             >
               Connect Wheels
             </Typography>
           </Box>
 
-          {/* Navigation Links */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {isAuthenticated ? (
               <>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "text.primary", fontWeight: 500 }}
-                >
-                  Welcome, {user?.firstName || user?.email}
+                <NotificationBell />
+                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>
+                  Welcome, {user?.firstName || user?.email?.split("@")[0] || "User"}
                 </Typography>
                 <Button
                   variant="outlined"
@@ -71,7 +71,9 @@ export default function Navbar() {
                   sx={{
                     borderRadius: 2,
                     textTransform: "none",
-                    fontWeight: 500,
+                    borderColor: "#64748b",
+                    color: "#94a3b8",
+                    "&:hover": { borderColor: "#f87171", color: "#f87171" },
                   }}
                 >
                   Logout
@@ -82,14 +84,10 @@ export default function Navbar() {
                 <Button
                   component={Link}
                   to="/login"
-                  variant="text"
                   sx={{
-                    color: "text.primary",
+                    color: "rgba(255,255,255,0.9)",
                     textTransform: "none",
-                    fontWeight: 500,
-                    "&:hover": {
-                      backgroundColor: "grey.50",
-                    },
+                    "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
                   }}
                 >
                   Login
@@ -101,7 +99,8 @@ export default function Navbar() {
                   sx={{
                     borderRadius: 2,
                     textTransform: "none",
-                    fontWeight: 500,
+                    backgroundColor: "#38bdf8",
+                    "&:hover": { backgroundColor: "#0ea5e9" },
                     px: 3,
                   }}
                 >
@@ -111,7 +110,7 @@ export default function Navbar() {
             )}
           </Box>
         </Toolbar>
-      </Container>
+      </Box>
     </AppBar>
   );
 }
