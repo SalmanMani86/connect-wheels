@@ -6,6 +6,19 @@ import { AuthRequest } from '../../../common/auth-middleware/auth_middleware';
 /** Build a relative API path for a car image saved by multer. */
 const carImagePath = (filename: string) => `/api/garage/uploads/cars/${filename}`;
 
+const browseCars = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+    const search = (req.query.q as string) || undefined;
+    const result = await carService.browseCars(page, limit, search);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error browsing cars' });
+  }
+};
+
 const addCar = async (req: AuthRequest, res: Response): Promise<void> => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -196,6 +209,7 @@ const deleteCar = async (req: AuthRequest, res: Response): Promise<void> => {
 };
 
 const controller = {
+  browseCars,
   addCar,
   getGarageCars,
   getCar,

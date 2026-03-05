@@ -56,6 +56,30 @@ export const addCar = async (
   return { message: 'Car added successfully', car: { ...created, media } };
 };
 
+export const browseCars = async (
+  page: number = 1,
+  limit: number = 20,
+  search?: string
+) => {
+  const query = carRepo()
+    .createQueryBuilder('car')
+    .leftJoinAndSelect('car.media', 'media')
+    .leftJoinAndSelect('car.garage', 'garage')
+    .orderBy('car.createdAt', 'DESC')
+    .skip((page - 1) * limit)
+    .take(limit);
+
+  if (search?.trim()) {
+    query.where(
+      '(LOWER(car.make) LIKE :s OR LOWER(car.model) LIKE :s OR LOWER(car.color) LIKE :s OR LOWER(car.engineType) LIKE :s)',
+      { s: `%${search.trim().toLowerCase()}%` }
+    );
+  }
+
+  const [cars, total] = await query.getManyAndCount();
+  return { cars, total, page, limit, totalPages: Math.ceil(total / limit) };
+};
+
 export const getGarageCars = async (
   garageId: number,
   page: number = 1,
@@ -144,6 +168,7 @@ export const deleteCar = async (
 };
 
 const carService = {
+  browseCars,
   addCar,
   getGarageCars,
   getCarById,

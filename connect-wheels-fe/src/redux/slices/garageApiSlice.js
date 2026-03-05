@@ -63,6 +63,21 @@ export const garageApiSlice = createApi({
       invalidatesTags: [{ type: "Garage", id: "LIST" }, { type: "Garage", id: "USER" }],
     }),
 
+    // Browse all cars across the platform
+    browseCars: builder.query({
+      query: ({ page = 1, limit = 20, q } = {}) => ({
+        url: `${GARAGE_BASE}/cars`,
+        params: { page, limit, ...(q ? { q } : {}) },
+      }),
+      providesTags: (result) =>
+        result?.cars
+          ? [
+              ...result.cars.map(({ id }) => ({ type: "Car", id })),
+              { type: "Car", id: "BROWSE" },
+            ]
+          : [{ type: "Car", id: "BROWSE" }],
+    }),
+
     // Cars
     getGarageCars: builder.query({
       query: ({ garageId, page = 1, limit = 10 }) => ({
@@ -341,6 +356,7 @@ export const {
   useCreateGarageMutation,
   useUpdateGarageMutation,
   useDeleteGarageMutation,
+  useBrowseCarsQuery,
   useGetGarageCarsQuery,
   useGetCarQuery,
   useAddCarMutation,

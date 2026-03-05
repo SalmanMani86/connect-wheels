@@ -8,6 +8,8 @@ import {
   CardMedia,
   Button,
   Container,
+  LinearProgress,
+  Chip,
 } from "@mui/material";
 import GarageIcon from "@mui/icons-material/Garage";
 import ArticleIcon from "@mui/icons-material/Article";
@@ -16,10 +18,17 @@ import PeopleIcon from "@mui/icons-material/People";
 import GroupIcon from "@mui/icons-material/Group";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import ExploreIcon from "@mui/icons-material/Explore";
+import WhatshotIcon from "@mui/icons-material/Whatshot";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useGetUserGaragesQuery } from "../redux/slices/garageApiSlice";
-import { useGetFollowingQuery } from "../redux/slices/garageApiSlice";
+import {
+  useGetUserGaragesQuery,
+  useGetFollowingQuery,
+  useSearchGaragesQuery,
+} from "../redux/slices/garageApiSlice";
 import { resolveImageUrl } from "../utils/imageUrl";
 import {
   BarChart,
@@ -60,6 +69,10 @@ export default function DashboardPage() {
     { userId: user?.id, page: 1, limit: 10 },
     { skip: !user?.id }
   );
+  const { data: discoverData } = useSearchGaragesQuery(
+    { q: "", page: 1, limit: 6 },
+    { skip: !user?.id }
+  );
 
   const garages = garagesData?.garages ?? [];
   const following = followingData?.following ?? [];
@@ -71,6 +84,52 @@ export default function DashboardPage() {
   const totalFollowers = garages.reduce((acc, g) => acc + (g.followersCount || 0), 0);
   const totalReach = totalFollowers + totalFollowing;
 
+  // --- Onboarding ---
+  const onboardingSteps = [
+    {
+      label: "Create your first garage",
+      description: "Your garage is your space — showcase your cars and posts",
+      done: totalGarages > 0,
+      action: () => navigate("/garages"),
+      icon: <GarageIcon />,
+      color: "#38bdf8",
+    },
+    {
+      label: "Add a car",
+      description: "Add your car with photos to your garage",
+      done: totalCars > 0,
+      action: () => navigate(garages[0] ? `/garages/${garages[0].id}` : "/garages"),
+      icon: <DirectionsCarIcon />,
+      color: "#fbbf24",
+    },
+    {
+      label: "Share a post",
+      description: "Share a story, build or update with the community",
+      done: totalPosts > 0,
+      action: () => navigate(garages[0] ? `/garages/${garages[0].id}` : "/garages"),
+      icon: <ArticleIcon />,
+      color: "#4ade80",
+    },
+    {
+      label: "Follow a garage",
+      description: "Discover other enthusiasts and follow their builds",
+      done: totalFollowing > 0,
+      action: () => navigate("/garages"),
+      icon: <PeopleIcon />,
+      color: "#a78bfa",
+    },
+  ];
+  const completedSteps = onboardingSteps.filter((s) => s.done).length;
+  const onboardingComplete = completedSteps === onboardingSteps.length;
+  const showOnboarding = !onboardingComplete;
+
+  // Discover: garages not owned by this user
+  const discoverGarages = (discoverData?.garages ?? [])
+    .filter((g) => Number(g.ownerId) !== Number(user?.id))
+    .slice(0, 4);
+  const showDiscover = totalFollowing === 0;
+
+  // Charts
   const contentColors = { Garages: "#38bdf8", Posts: "#4ade80", Cars: "#fbbf24" };
   const contentPieData = [
     { name: "Garages", value: totalGarages, fill: contentColors.Garages },
@@ -84,12 +143,49 @@ export default function DashboardPage() {
     posts: g.postsCount || 0,
   }));
 
+  const hasChartData = totalGarages > 0 || totalPosts > 0 || totalCars > 0;
+
   const stats = [
-    { label: "Garages", value: totalGarages, icon: <GarageIcon />, color: "#38bdf8" },
-    { label: "Posts", value: totalPosts, icon: <ArticleIcon />, color: "#4ade80" },
-    { label: "Cars", value: totalCars, icon: <DirectionsCarIcon />, color: "#fbbf24" },
-    { label: "Followers", value: totalFollowers, icon: <PeopleIcon />, color: "#a78bfa" },
-    { label: "Following", value: totalFollowing, icon: <GroupIcon />, color: "#f472b6" },
+    {
+      label: "Garages",
+      value: totalGarages,
+      icon: <GarageIcon />,
+      color: "#38bdf8",
+      cta: totalGarages === 0 ? "Create one" : null,
+      onClick: () => navigate("/garages"),
+    },
+    {
+      label: "Posts",
+      value: totalPosts,
+      icon: <ArticleIcon />,
+      color: "#4ade80",
+      cta: totalPosts === 0 && totalGarages > 0 ? "Write one" : null,
+      onClick: () => navigate(garages[0] ? `/garages/${garages[0].id}` : "/garages"),
+    },
+    {
+      label: "Cars",
+      value: totalCars,
+      icon: <DirectionsCarIcon />,
+      color: "#fbbf24",
+      cta: totalCars === 0 && totalGarages > 0 ? "Add one" : null,
+      onClick: () => navigate(garages[0] ? `/garages/${garages[0].id}` : "/garages"),
+    },
+    {
+      label: "Followers",
+      value: totalFollowers,
+      icon: <PeopleIcon />,
+      color: "#a78bfa",
+      cta: null,
+      onClick: null,
+    },
+    {
+      label: "Following",
+      value: totalFollowing,
+      icon: <GroupIcon />,
+      color: "#f472b6",
+      cta: totalFollowing === 0 ? "Discover" : null,
+      onClick: () => navigate("/garages"),
+    },
   ];
 
   return (
@@ -104,7 +200,7 @@ export default function DashboardPage() {
       <Container disableGutters maxWidth={false} sx={{ px: { xs: 2, sm: 3 } }}>
         {user && (
           <>
-            {/* Hero / Welcome section - North Star metric */}
+            {/* ── Hero ── */}
             <Paper
               elevation={0}
               sx={{
@@ -127,13 +223,31 @@ export default function DashboardPage() {
                 },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", flexWrap: "wrap", gap: 2, position: "relative" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: { xs: "flex-start", sm: "center" },
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 2,
+                  position: "relative",
+                }}
+              >
                 <Box>
-                  <Typography variant="h5" sx={{ color: "white", fontWeight: 700, fontSize: { xs: "1.2rem", sm: "1.5rem" } }}>
-                    {getTimeGreeting()}!
+                  <Typography
+                    variant="h5"
+                    sx={{ color: "white", fontWeight: 700, fontSize: { xs: "1.2rem", sm: "1.5rem" } }}
+                  >
+                    {getTimeGreeting()},{" "}
+                    <span style={{ color: "#38bdf8" }}>
+                      {user?.firstName || user?.email?.split("@")[0] || "there"}
+                    </span>
+                    !
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#94a3b8", mt: 0.5 }}>
-                    Here&apos;s your activity overview
+                    {onboardingComplete
+                      ? "Your garage is live — keep building!"
+                      : `${completedSteps} of ${onboardingSteps.length} setup steps done`}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
@@ -159,50 +273,188 @@ export default function DashboardPage() {
                       </Typography>
                     </Box>
                   </Box>
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => navigate("/settings")}
-                    sx={{
-                      borderColor: "rgba(255,255,255,0.3)",
-                      color: "#94a3b8",
-                      textTransform: "none",
-                      display: { xs: "none", sm: "inline-flex" },
-                      "&:hover": { borderColor: "#38bdf8", color: "#38bdf8", bgcolor: "rgba(56,189,248,0.08)" },
-                    }}
-                  >
-                    Settings
-                  </Button>
                 </Box>
               </Box>
             </Paper>
 
-            {/* Stats cards with icons */}
+            {/* ── Onboarding Checklist ── */}
+            {showOnboarding && (
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 3,
+                  mb: 3,
+                  borderRadius: 3,
+                  background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+                  border: "1px solid rgba(56,189,248,0.15)",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ color: "white", fontWeight: 700 }}>
+                      Get Started
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                      {completedSteps === 0
+                        ? "Complete these steps to unlock the full experience"
+                        : `${onboardingSteps.length - completedSteps} step${onboardingSteps.length - completedSteps > 1 ? "s" : ""} left`}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={`${completedSteps}/${onboardingSteps.length}`}
+                    size="small"
+                    sx={{ bgcolor: "rgba(56,189,248,0.15)", color: "#38bdf8", fontWeight: 700 }}
+                  />
+                </Box>
+
+                <LinearProgress
+                  variant="determinate"
+                  value={(completedSteps / onboardingSteps.length) * 100}
+                  sx={{
+                    mb: 2.5,
+                    height: 6,
+                    borderRadius: 3,
+                    bgcolor: "rgba(255,255,255,0.06)",
+                    "& .MuiLinearProgress-bar": { bgcolor: "#38bdf8", borderRadius: 3 },
+                  }}
+                />
+
+                <Grid container spacing={1.5}>
+                  {onboardingSteps.map((step, i) => (
+                    <Grid size={{ xs: 12, sm: 6 }} key={i}>
+                      <Box
+                        onClick={step.done ? undefined : step.action}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          p: 1.5,
+                          borderRadius: 2,
+                          border: `1px solid ${step.done ? "rgba(74,222,128,0.2)" : "rgba(255,255,255,0.06)"}`,
+                          bgcolor: step.done ? "rgba(74,222,128,0.05)" : "rgba(255,255,255,0.02)",
+                          cursor: step.done ? "default" : "pointer",
+                          transition: "all 0.2s",
+                          "&:hover": step.done
+                            ? {}
+                            : { borderColor: `${step.color}40`, bgcolor: `${step.color}08` },
+                        }}
+                      >
+                        <Box sx={{ color: step.done ? "#4ade80" : "rgba(255,255,255,0.2)", flexShrink: 0 }}>
+                          {step.done ? <CheckCircleIcon /> : <RadioButtonUncheckedIcon />}
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: step.done ? "#64748b" : "white",
+                              fontWeight: 600,
+                              textDecoration: step.done ? "line-through" : "none",
+                            }}
+                          >
+                            {step.label}
+                          </Typography>
+                          {!step.done && (
+                            <Typography variant="caption" sx={{ color: "#475569" }}>
+                              {step.description}
+                            </Typography>
+                          )}
+                        </Box>
+                        {!step.done && (
+                          <Box sx={{ color: step.color, flexShrink: 0, opacity: 0.7 }}>
+                            {step.icon}
+                          </Box>
+                        )}
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Paper>
+            )}
+
+            {/* ── Quick Actions ── */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="caption" sx={{ color: "#64748b", textTransform: "uppercase", letterSpacing: 1, mb: 1.5, display: "block" }}>
+                Quick Actions
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  size="small"
+                  onClick={() => navigate("/garages")}
+                  sx={{ borderRadius: 2, textTransform: "none", bgcolor: "#38bdf8", "&:hover": { bgcolor: "#0ea5e9" } }}
+                >
+                  New Garage
+                </Button>
+                {garages.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<DirectionsCarIcon />}
+                    size="small"
+                    onClick={() => navigate(`/garages/${garages[0].id}`)}
+                    sx={{ borderRadius: 2, textTransform: "none", borderColor: "#fbbf24", color: "#fbbf24", "&:hover": { bgcolor: "rgba(251,191,36,0.08)" } }}
+                  >
+                    Add Car
+                  </Button>
+                )}
+                {garages.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<ArticleIcon />}
+                    size="small"
+                    onClick={() => navigate(`/garages/${garages[0].id}`)}
+                    sx={{ borderRadius: 2, textTransform: "none", borderColor: "#4ade80", color: "#4ade80", "&:hover": { bgcolor: "rgba(74,222,128,0.08)" } }}
+                  >
+                    New Post
+                  </Button>
+                )}
+                <Button
+                  variant="outlined"
+                  startIcon={<WhatshotIcon />}
+                  size="small"
+                  onClick={() => navigate("/feed/trending")}
+                  sx={{ borderRadius: 2, textTransform: "none", borderColor: "#f472b6", color: "#f472b6", "&:hover": { bgcolor: "rgba(244,114,182,0.08)" } }}
+                >
+                  Trending
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<ExploreIcon />}
+                  size="small"
+                  onClick={() => navigate("/garages")}
+                  sx={{ borderRadius: 2, textTransform: "none", borderColor: "#a78bfa", color: "#a78bfa", "&:hover": { bgcolor: "rgba(167,139,250,0.08)" } }}
+                >
+                  Explore
+                </Button>
+              </Box>
+            </Box>
+
+            {/* ── Stats ── */}
             <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
               {stats.map((s) => (
                 <Grid size={{ xs: 6, sm: 4, md: 2 }} key={s.label}>
                   <Paper
                     elevation={0}
+                    onClick={s.value === 0 && s.onClick ? s.onClick : undefined}
                     sx={{
                       p: 2,
                       borderRadius: 2,
                       display: "flex",
                       alignItems: "center",
-                      gap: 2,
+                      gap: 1.5,
                       background: "rgba(255,255,255,0.03)",
-                      border: "1px solid rgba(255,255,255,0.06)",
+                      border: `1px solid ${s.value === 0 ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.06)"}`,
+                      cursor: s.value === 0 && s.onClick ? "pointer" : "default",
                       transition: "all 0.2s",
-                      "&:hover": {
-                        borderColor: `${s.color}40`,
-                        background: `${s.color}08`,
-                        transform: "translateY(-2px)",
-                      },
+                      "&:hover": s.value === 0 && s.onClick
+                        ? { borderColor: `${s.color}50`, background: `${s.color}08`, transform: "translateY(-2px)" }
+                        : { borderColor: `${s.color}40`, background: `${s.color}08`, transform: "translateY(-2px)" },
                     }}
                   >
                     <Box
                       sx={{
-                        width: { xs: 36, sm: 48 },
-                        height: { xs: 36, sm: 48 },
+                        width: { xs: 36, sm: 44 },
+                        height: { xs: 36, sm: 44 },
                         borderRadius: 2,
                         display: "flex",
                         alignItems: "center",
@@ -210,55 +462,66 @@ export default function DashboardPage() {
                         background: `${s.color}20`,
                         color: s.color,
                         flexShrink: 0,
+                        opacity: s.value === 0 ? 0.5 : 1,
                       }}
                     >
                       {s.icon}
                     </Box>
                     <Box>
-                      <Typography sx={{ color: "white", fontWeight: 700, fontSize: { xs: "1.2rem", sm: "1.5rem" } }}>
+                      <Typography
+                        sx={{
+                          color: s.value === 0 ? "#475569" : "white",
+                          fontWeight: 700,
+                          fontSize: { xs: "1.1rem", sm: "1.4rem" },
+                          lineHeight: 1.2,
+                        }}
+                      >
                         {s.value}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#64748b" }}>
+                      <Typography variant="caption" sx={{ color: "#64748b", display: "block" }}>
                         {s.label}
                       </Typography>
+                      {s.cta && (
+                        <Typography variant="caption" sx={{ color: s.color, fontWeight: 600 }}>
+                          {s.cta} →
+                        </Typography>
+                      )}
                     </Box>
                   </Paper>
                 </Grid>
               ))}
             </Grid>
 
-            {/* Charts section - full row width */}
-            <Grid container spacing={3} sx={{ mb: 3 }}>
-              {/* Content Mix - what you've created (Garages / Posts / Cars only) */}
-              <Grid size={{ xs: 12, md: 5 }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    height: "100%",
-                    minHeight: 340,
-                    borderRadius: 3,
-                    background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  <Typography variant="h6" sx={{ color: "white", mb: 1, fontWeight: 600 }}>
-                    Content Mix
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 2 }}>
-                    Breakdown of what you&apos;ve added (garages, posts, cars)
-                  </Typography>
-                  {contentPieData.length > 0 ? (
-                    <Box sx={{ width: "100%", height: 280 }}>
+            {/* ── Charts (only when user has content) ── */}
+            {hasChartData && (
+              <Grid container spacing={3} sx={{ mb: 3 }}>
+                <Grid size={{ xs: 12, md: 5 }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      height: "100%",
+                      minHeight: 340,
+                      borderRadius: 3,
+                      background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ color: "white", mb: 0.5, fontWeight: 600 }}>
+                      Content Mix
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 2 }}>
+                      Breakdown of garages, posts &amp; cars you&apos;ve added
+                    </Typography>
+                    <Box sx={{ width: "100%", height: 300 }}>
                       <ResponsiveContainer>
-                        <PieChart>
+                        <PieChart margin={{ top: 30, right: 20, bottom: 0, left: 20 }}>
                           <Pie
                             data={contentPieData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={65}
-                            outerRadius={100}
+                            innerRadius={60}
+                            outerRadius={90}
                             paddingAngle={3}
                             dataKey="value"
                             stroke="rgba(15,23,42,0.8)"
@@ -277,7 +540,7 @@ export default function DashboardPage() {
                               const total = contentPieData.reduce((s, d) => s + d.value, 0);
                               const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
                               return (
-                                <Box sx={{ bgcolor: "#0f172a", border: "1px solid rgba(56,189,248,0.3)", borderRadius: 2, px: 2, py: 1.5, boxShadow: 2 }}>
+                                <Box sx={{ bgcolor: "#0f172a", border: "1px solid rgba(56,189,248,0.3)", borderRadius: 2, px: 2, py: 1.5 }}>
                                   <Typography variant="body2" sx={{ color: "#e2e8f0", fontWeight: 600 }}>
                                     {item.name}: {item.value}
                                   </Typography>
@@ -292,36 +555,27 @@ export default function DashboardPage() {
                         </PieChart>
                       </ResponsiveContainer>
                     </Box>
-                  ) : (
-                    <Box sx={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 1 }}>
-                      <Typography sx={{ color: "#64748b" }}>No content yet</Typography>
-                      <Typography variant="caption" sx={{ color: "#475569" }}>Add garages, posts & cars to see the mix</Typography>
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
+                  </Paper>
+                </Grid>
 
-              {/* Activity per Garage - different data (per-garage breakdown) */}
-              <Grid size={{ xs: 12, md: 7 }}>
-                <Paper
-                  elevation={0}
-                  sx={{
-                    p: 3,
-                    height: "100%",
-                    minHeight: 340,
-                    borderRadius: 3,
-                    background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
-                  }}
-                >
-                  <Typography variant="h6" sx={{ color: "white", mb: 1, fontWeight: 600 }}>
-                    Content per Garage
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 2 }}>
-                    Cars and posts in each of your garages
-                  </Typography>
-                  {garages.length > 0 ? (
+                <Grid size={{ xs: 12, md: 7 }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      p: 3,
+                      height: "100%",
+                      minHeight: 340,
+                      borderRadius: 3,
+                      background: "linear-gradient(145deg, #1e293b 0%, #0f172a 100%)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ color: "white", mb: 0.5, fontWeight: 600 }}>
+                      Content per Garage
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 2 }}>
+                      Cars and posts in each of your garages
+                    </Typography>
                     <Box sx={{ width: "100%", height: 280 }}>
                       <ResponsiveContainer>
                         <BarChart data={garageActivityData} layout="vertical" margin={{ top: 8, right: 24, left: 4, bottom: 8 }}>
@@ -334,31 +588,26 @@ export default function DashboardPage() {
                               const d = payload[0]?.payload;
                               if (!d) return null;
                               return (
-                                <Box sx={{ bgcolor: "#0f172a", border: "1px solid rgba(56,189,248,0.3)", borderRadius: 2, px: 2, py: 1.5, boxShadow: 2 }}>
+                                <Box sx={{ bgcolor: "#0f172a", border: "1px solid rgba(56,189,248,0.3)", borderRadius: 2, px: 2, py: 1.5 }}>
                                   <Typography variant="body2" sx={{ color: "white", fontWeight: 600 }}>{d.name}</Typography>
-                                  <Typography variant="caption" sx={{ color: "#4ade80" }}>Cars: {d.cars}</Typography>
-                                  <Typography variant="caption" sx={{ color: "#38bdf8", display: "block" }}>Posts: {d.posts}</Typography>
+                                  <Typography variant="caption" sx={{ color: "#fbbf24" }}>Cars: {d.cars}</Typography>
+                                  <Typography variant="caption" sx={{ color: "#4ade80", display: "block" }}>Posts: {d.posts}</Typography>
                                 </Box>
                               );
                             }}
                             cursor={{ fill: "rgba(56,189,248,0.08)" }}
                           />
-                          <Bar dataKey="cars" stackId="a" fill="#fbbf24" radius={[0, 0, 0, 0]} name="Cars" />
+                          <Bar dataKey="cars" stackId="a" fill="#fbbf24" name="Cars" />
                           <Bar dataKey="posts" stackId="a" fill="#4ade80" radius={[0, 4, 4, 0]} name="Posts" />
                         </BarChart>
                       </ResponsiveContainer>
                     </Box>
-                  ) : (
-                    <Box sx={{ height: 280, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 1 }}>
-                      <Typography sx={{ color: "#64748b" }}>No garage activity yet</Typography>
-                      <Typography variant="caption" sx={{ color: "#475569" }}>Add cars and posts to your garages to see breakdown</Typography>
-                    </Box>
-                  )}
-                </Paper>
+                  </Paper>
+                </Grid>
               </Grid>
-            </Grid>
+            )}
 
-            {/* My Garages section */}
+            {/* ── My Garages ── */}
             <Box sx={{ mb: 3 }}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
@@ -369,48 +618,33 @@ export default function DashboardPage() {
                   size="small"
                   startIcon={<AddIcon />}
                   onClick={() => navigate("/garages")}
-                  sx={{
-                    borderRadius: 2,
-                    textTransform: "none",
-                    backgroundColor: "#38bdf8",
-                    "&:hover": { backgroundColor: "#0ea5e9" },
-                  }}
+                  sx={{ borderRadius: 2, textTransform: "none", backgroundColor: "#38bdf8", "&:hover": { backgroundColor: "#0ea5e9" } }}
                 >
-                  Create Garage
+                  {garages.length === 0 ? "Create Garage" : "Manage"}
                 </Button>
               </Box>
               {garages.length === 0 ? (
                 <Paper
                   elevation={0}
+                  onClick={() => navigate("/garages")}
                   sx={{
-                    p: 6,
+                    p: { xs: 4, sm: 5 },
                     borderRadius: 3,
                     textAlign: "center",
-                    background: "rgba(255,255,255,0.02)",
-                    border: "2px dashed rgba(255,255,255,0.1)",
+                    background: "rgba(56,189,248,0.03)",
+                    border: "2px dashed rgba(56,189,248,0.2)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    "&:hover": { borderColor: "rgba(56,189,248,0.4)", background: "rgba(56,189,248,0.06)" },
                   }}
                 >
-                  <GarageIcon sx={{ fontSize: 64, color: "rgba(255,255,255,0.2)", mb: 2 }} />
-                  <Typography sx={{ color: "#94a3b8", mb: 2, display: "block" }}>
-                    You don&apos;t have any garages yet.
+                  <GarageIcon sx={{ fontSize: 48, color: "rgba(56,189,248,0.3)", mb: 1.5 }} />
+                  <Typography sx={{ color: "#94a3b8", fontWeight: 600, mb: 0.5 }}>
+                    No garages yet
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#64748b", mb: 2, display: "block" }}>
-                    Create your first garage to start sharing cars and posts with the community.
+                  <Typography variant="body2" sx={{ color: "#475569" }}>
+                    Click to create your first garage and start sharing
                   </Typography>
-                  <Button
-                    variant="contained"
-                    size="medium"
-                    startIcon={<AddIcon />}
-                    onClick={() => navigate("/garages")}
-                    sx={{
-                      borderRadius: 2,
-                      textTransform: "none",
-                      backgroundColor: "#38bdf8",
-                      "&:hover": { backgroundColor: "#0ea5e9" },
-                    }}
-                  >
-                    Create Garage
-                  </Button>
                 </Paper>
               ) : (
                 <Grid container spacing={2}>
@@ -441,7 +675,7 @@ export default function DashboardPage() {
                               image={imgUrl || FALLBACK_COVER}
                               alt={g.name}
                               onError={(e) => { e.target.src = FALLBACK_COVER; }}
-                              sx={{ height: 140, objectFit: "cover", transition: "transform 0.3s", "&:hover": { transform: "scale(1.02)" } }}
+                              sx={{ height: 130, objectFit: "cover" }}
                             />
                             <Box
                               className="garage-overlay"
@@ -453,15 +687,8 @@ export default function DashboardPage() {
                                 transition: "opacity 0.25s",
                               }}
                             />
-                            <Box
-                              sx={{
-                                position: "absolute",
-                                bottom: 12,
-                                left: 16,
-                                right: 16,
-                              }}
-                            >
-                              <Typography variant="h6" sx={{ color: "white", fontWeight: 700 }}>
+                            <Box sx={{ position: "absolute", bottom: 10, left: 14, right: 14 }}>
+                              <Typography variant="subtitle1" sx={{ color: "white", fontWeight: 700, lineHeight: 1.2 }}>
                                 {g.name}
                               </Typography>
                               <Typography variant="caption" sx={{ color: "#94a3b8" }}>
@@ -469,17 +696,8 @@ export default function DashboardPage() {
                               </Typography>
                             </Box>
                           </Box>
-                          <CardContent sx={{ py: 1.5 }}>
-                            <Button
-                              fullWidth
-                              size="small"
-                              sx={{
-                                color: "#38bdf8",
-                                textTransform: "none",
-                                fontWeight: 600,
-                                justifyContent: "flex-start",
-                              }}
-                            >
+                          <CardContent sx={{ py: 1 }}>
+                            <Button fullWidth size="small" sx={{ color: "#38bdf8", textTransform: "none", fontWeight: 600, justifyContent: "flex-start" }}>
                               View Garage →
                             </Button>
                           </CardContent>
@@ -490,6 +708,82 @@ export default function DashboardPage() {
                 </Grid>
               )}
             </Box>
+
+            {/* ── Discover Garages (when not following anyone) ── */}
+            {showDiscover && discoverGarages.length > 0 && (
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                  <Box>
+                    <Typography variant="h6" sx={{ color: "white", fontWeight: 600 }}>
+                      Discover Garages
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                      Follow garages to see their posts in your feed
+                    </Typography>
+                  </Box>
+                  <Button
+                    size="small"
+                    startIcon={<ExploreIcon />}
+                    onClick={() => navigate("/garages")}
+                    sx={{ color: "#a78bfa", textTransform: "none" }}
+                  >
+                    See all
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {discoverGarages.map((g) => {
+                    const imgUrl = getValidImageUrl(g.coverImageUrl) || getValidImageUrl(g.pictureUrl);
+                    return (
+                      <Grid size={{ xs: 12, sm: 6, md: 3 }} key={g.id}>
+                        <Card
+                          sx={{
+                            borderRadius: 2,
+                            overflow: "hidden",
+                            cursor: "pointer",
+                            background: "#1e293b",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            transition: "all 0.2s",
+                            "&:hover": { transform: "translateY(-2px)", borderColor: "rgba(167,139,250,0.3)" },
+                          }}
+                          onClick={() => navigate(`/garages/${g.id}`)}
+                        >
+                          <CardMedia
+                            component="img"
+                            image={imgUrl || FALLBACK_COVER}
+                            alt={g.name}
+                            onError={(e) => { e.target.src = FALLBACK_COVER; }}
+                            sx={{ height: 110, objectFit: "cover" }}
+                          />
+                          <CardContent sx={{ py: 1.5 }}>
+                            <Typography variant="subtitle2" sx={{ color: "white", fontWeight: 600, mb: 0.5 }}>
+                              {g.name}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#64748b", display: "block", mb: 1 }}>
+                              {g.followersCount} followers · {g.carsCount} cars
+                            </Typography>
+                            <Button
+                              fullWidth
+                              size="small"
+                              variant="outlined"
+                              onClick={(e) => { e.stopPropagation(); navigate(`/garages/${g.id}`); }}
+                              sx={{
+                                borderRadius: 1.5,
+                                textTransform: "none",
+                                borderColor: "rgba(167,139,250,0.4)",
+                                color: "#a78bfa",
+                                "&:hover": { bgcolor: "rgba(167,139,250,0.08)" },
+                              }}
+                            >
+                              Visit
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            )}
           </>
         )}
       </Container>

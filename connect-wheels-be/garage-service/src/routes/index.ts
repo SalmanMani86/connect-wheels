@@ -2,8 +2,12 @@ import { Router } from 'express';
 import garageRoutes from './garage-routes';
 import carRoutes from './car-routes';
 import postRoutes from './post-routes';
+import carController from '../controller/car-controller';
 
 const router = Router();
+
+// Browse all cars across all garages (must be before /:garageId/cars to avoid param conflict)
+router.get('/cars', carController.browseCars);
 
 // Car routes (/:garageId/cars)
 router.use('/:garageId/cars', carRoutes);
