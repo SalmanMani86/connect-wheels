@@ -125,30 +125,39 @@ export default function FeedPage({ trending = false }) {
   return (
     <Box sx={{ py: 3, px: 2, background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)", minHeight: "100%" }}>
       <Container maxWidth="lg">
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-          <Typography variant="h4" sx={{ color: "white", fontWeight: 700 }}>
-            {trending ? "Trending" : "Feed"}
-          </Typography>
+        <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, flexDirection: { xs: "column", sm: "row" }, gap: { xs: 1, sm: 2 }, mb: 3, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Typography variant="h5" sx={{ color: "white", fontWeight: 700 }}>
+              {trending ? "Trending" : "Feed"}
+            </Typography>
+            {!trending && (
+              <Button
+                startIcon={<TrendingUpIcon />}
+                size="small"
+                sx={{ color: "#38bdf8", textTransform: "none" }}
+                onClick={() => navigate("/feed/trending")}
+              >
+                Trending
+              </Button>
+            )}
+            {trending && (
+              <Button size="small" sx={{ color: "#38bdf8", textTransform: "none" }} onClick={() => navigate("/feed")}>
+                My Feed
+              </Button>
+            )}
+          </Box>
           {trending && (
-            <Tabs value={timeframe} onChange={(_, v) => setTimeframe(v)} sx={{ "& .MuiTab-root": { color: "rgba(255,255,255,0.8)" } }}>
+            <Tabs
+              value={timeframe}
+              onChange={(_, v) => setTimeframe(v)}
+              variant="scrollable"
+              scrollButtons="auto"
+              sx={{ "& .MuiTab-root": { color: "rgba(255,255,255,0.8)", minWidth: 64 } }}
+            >
               <Tab label="Week" value="week" />
               <Tab label="Month" value="month" />
               <Tab label="All" value="all" />
             </Tabs>
-          )}
-          {!trending && (
-            <Button
-              startIcon={<TrendingUpIcon />}
-              sx={{ color: "#38bdf8", textTransform: "none" }}
-              onClick={() => navigate("/feed/trending")}
-            >
-              Trending
-            </Button>
-          )}
-          {trending && (
-            <Button sx={{ color: "#38bdf8", textTransform: "none" }} onClick={() => navigate("/feed")}>
-              My Feed
-            </Button>
           )}
         </Box>
 

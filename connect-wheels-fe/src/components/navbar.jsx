@@ -50,6 +50,7 @@ export default function Navbar() {
                 color: "white",
                 textDecoration: "none",
                 fontWeight: 700,
+                display: { xs: "none", sm: "block" },
                 "&:hover": { color: "#38bdf8" },
               }}
             >
@@ -61,7 +62,14 @@ export default function Navbar() {
             {isAuthenticated ? (
               <>
                 <NotificationBell />
-                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "rgba(255,255,255,0.9)",
+                    fontWeight: 500,
+                    display: { xs: "none", sm: "block" },
+                  }}
+                >
                   Welcome, {user?.firstName || user?.email?.split("@")[0] || "User"}
                 </Typography>
                 <Button

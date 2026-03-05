@@ -18,6 +18,8 @@ import {
   DialogActions,
   TextField,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -44,6 +46,8 @@ import { toast } from "react-toastify";
 import { resolveImageUrl } from "../utils/imageUrl";
 
 export default function GarageDetailPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { garageId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -395,7 +399,7 @@ export default function GarageDetailPage() {
           )}
           <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 2 }}>
             <Box>
-              <Typography variant="h4" sx={{ color: "white", fontWeight: 700 }}>
+              <Typography variant="h4" sx={{ color: "white", fontWeight: 700, fontSize: { xs: "1.5rem", sm: "2.125rem" } }}>
                 {garage.name}
               </Typography>
               <Typography sx={{ color: "#94a3b8", mt: 0.5 }}>{garage.description || "No description"}</Typography>
@@ -589,6 +593,7 @@ export default function GarageDetailPage() {
         onClose={() => setPostDialogOpen(false)}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         slotProps={{
           paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } },
         }}
@@ -704,6 +709,7 @@ export default function GarageDetailPage() {
         }}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         slotProps={{
           paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } },
         }}
@@ -818,6 +824,7 @@ export default function GarageDetailPage() {
         }}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         slotProps={{ paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } } }}
       >
         <DialogTitle sx={{ color: "white" }}>Edit Car</DialogTitle>

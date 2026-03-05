@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddIcon from "@mui/icons-material/Add";
@@ -31,6 +33,8 @@ import { uploadGarageCover } from "../utils/uploadUtils";
 import { resolveImageUrl } from "../utils/imageUrl";
 
 export default function GaragesPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.user);
   const [search, setSearch] = useState("");
@@ -122,7 +126,8 @@ export default function GaragesPage() {
             onChange={(e) => setSearch(e.target.value)}
             size="small"
             sx={{
-              minWidth: 240,
+              flex: { xs: 1, sm: "initial" },
+              minWidth: { xs: 0, sm: 240 },
               "& .MuiOutlinedInput-root": {
                 backgroundColor: "rgba(255,255,255,0.1)",
                 color: "white",
@@ -143,7 +148,8 @@ export default function GaragesPage() {
             onChange={(e) => setLocation(e.target.value)}
             size="small"
             sx={{
-              minWidth: 180,
+              flex: { xs: 1, sm: "initial" },
+              minWidth: { xs: 0, sm: 160 },
               "& .MuiOutlinedInput-root": {
                 backgroundColor: "rgba(255,255,255,0.1)",
                 color: "white",
@@ -156,7 +162,7 @@ export default function GaragesPage() {
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setCreateOpen(true)}
-              sx={{ borderRadius: 2, textTransform: "none" }}
+              sx={{ borderRadius: 2, textTransform: "none", whiteSpace: "nowrap" }}
             >
               Create Garage
             </Button>
@@ -231,6 +237,7 @@ export default function GaragesPage() {
         }}
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
         slotProps={{
           paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } },
         }}

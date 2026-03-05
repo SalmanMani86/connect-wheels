@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box } from "@mui/material";
+import { Box, IconButton, Typography } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import ChatList from "../components/chat/ChatList";
@@ -114,13 +115,18 @@ export default function ChatPage() {
         backgroundColor: "#0f172a",
       }}
     >
-      {/* Chat List - Left Sidebar */}
+      {/* Chat List — full width on mobile when no chat selected, fixed width on desktop */}
       <Box
         sx={{
-          width: 360,
+          width: { xs: "100%", md: 360 },
           flexShrink: 0,
-          borderRight: "1px solid rgba(255,255,255,0.08)",
+          borderRight: { md: "1px solid rgba(255,255,255,0.08)" },
           minHeight: 0,
+          display: {
+            xs: selectedChat ? "none" : "flex",
+            md: "flex",
+          },
+          flexDirection: "column",
         }}
       >
         <ChatList
@@ -130,15 +136,45 @@ export default function ChatPage() {
         />
       </Box>
 
-      {/* Chat Window - Main Area */}
+      {/* Chat Window — hidden on mobile until a chat is selected */}
       <Box
         sx={{
           flex: 1,
-          display: "flex",
+          display: {
+            xs: selectedChat ? "flex" : "none",
+            md: "flex",
+          },
           flexDirection: "column",
-          minHeight: 0, // Important: allows flex child to shrink below content size
+          minHeight: 0,
         }}
       >
+        {/* Mobile back button */}
+        {selectedChat && (
+          <Box
+            sx={{
+              display: { xs: "flex", md: "none" },
+              alignItems: "center",
+              gap: 1,
+              px: 1,
+              py: 0.5,
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+              bgcolor: "#0f172a",
+            }}
+          >
+            <IconButton
+              onClick={() => {
+                setSelectedChat(null);
+                dispatch(clearCurrentChat());
+              }}
+              sx={{ color: "#38bdf8" }}
+            >
+              <ArrowBackIcon />
+            </IconButton>
+            <Typography variant="body1" sx={{ color: "white", fontWeight: 600 }}>
+              Messages
+            </Typography>
+          </Box>
+        )}
         <ChatWindow chat={selectedChat} onEditMessage={handleEditMessage} />
         {selectedChat && (
           <MessageInput

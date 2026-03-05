@@ -127,34 +127,34 @@ export default function DashboardPage() {
                 },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2, position: "relative" }}>
+              <Box sx={{ display: "flex", alignItems: { xs: "flex-start", sm: "center" }, justifyContent: "space-between", flexWrap: "wrap", gap: 2, position: "relative" }}>
                 <Box>
-                  <Typography variant="h5" sx={{ color: "white", fontWeight: 700 }}>
+                  <Typography variant="h5" sx={{ color: "white", fontWeight: 700, fontSize: { xs: "1.2rem", sm: "1.5rem" } }}>
                     {getTimeGreeting()}!
                   </Typography>
                   <Typography variant="body2" sx={{ color: "#94a3b8", mt: 0.5 }}>
                     Here&apos;s your activity overview
                   </Typography>
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
                   <Box
                     sx={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 1.5,
-                      px: 2.5,
-                      py: 1.5,
+                      gap: 1,
+                      px: { xs: 1.5, sm: 2.5 },
+                      py: 1,
                       borderRadius: 2,
                       background: "rgba(56, 189, 248, 0.12)",
                       border: "1px solid rgba(56, 189, 248, 0.25)",
                     }}
                   >
-                    <TrendingUpIcon sx={{ color: "#38bdf8", fontSize: 28 }} />
+                    <TrendingUpIcon sx={{ color: "#38bdf8", fontSize: { xs: 20, sm: 28 } }} />
                     <Box>
                       <Typography variant="caption" sx={{ color: "#94a3b8", display: "block" }}>
                         Total Reach
                       </Typography>
-                      <Typography variant="h5" sx={{ color: "#38bdf8", fontWeight: 700 }}>
+                      <Typography sx={{ color: "#38bdf8", fontWeight: 700, fontSize: { xs: "1.1rem", sm: "1.5rem" } }}>
                         {totalReach}
                       </Typography>
                     </Box>
@@ -167,6 +167,7 @@ export default function DashboardPage() {
                       borderColor: "rgba(255,255,255,0.3)",
                       color: "#94a3b8",
                       textTransform: "none",
+                      display: { xs: "none", sm: "inline-flex" },
                       "&:hover": { borderColor: "#38bdf8", color: "#38bdf8", bgcolor: "rgba(56,189,248,0.08)" },
                     }}
                   >
@@ -177,7 +178,7 @@ export default function DashboardPage() {
             </Paper>
 
             {/* Stats cards with icons */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: 3 }}>
               {stats.map((s) => (
                 <Grid size={{ xs: 6, sm: 4, md: 2 }} key={s.label}>
                   <Paper
@@ -200,20 +201,21 @@ export default function DashboardPage() {
                   >
                     <Box
                       sx={{
-                        width: 48,
-                        height: 48,
+                        width: { xs: 36, sm: 48 },
+                        height: { xs: 36, sm: 48 },
                         borderRadius: 2,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         background: `${s.color}20`,
                         color: s.color,
+                        flexShrink: 0,
                       }}
                     >
                       {s.icon}
                     </Box>
                     <Box>
-                      <Typography variant="h5" sx={{ color: "white", fontWeight: 700 }}>
+                      <Typography sx={{ color: "white", fontWeight: 700, fontSize: { xs: "1.2rem", sm: "1.5rem" } }}>
                         {s.value}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "#64748b" }}>
