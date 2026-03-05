@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER commit these — contain passwords/secrets)
+.env
+.env.local
+.env.production
+
+# Build output
+dist/
+build/
+
+# Uploaded files (user images saved on disk — too large for git)
+**/uploads/garage-covers/
+**/uploads/posts/
+**/uploads/cars/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript compiled output
+*.js.map
+
+# Vite cache
+.vite/
+
+# Test coverage
+coverage/
