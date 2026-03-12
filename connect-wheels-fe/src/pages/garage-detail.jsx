@@ -23,11 +23,13 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PersonRemoveIcon from "@mui/icons-material/PersonRemove";
 import ChatIcon from "@mui/icons-material/Chat";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import CloseIcon from "@mui/icons-material/Close";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   useGetGarageQuery,
   useGetGarageCarsQuery,
@@ -37,7 +39,10 @@ import {
   useCreatePostMutation,
   useAddCarMutation,
   useUpdateCarMutation,
+  useDeleteCarMutation,
   useUpdateGarageMutation,
+  useDeleteGarageMutation,
+  useDeletePostMutation,
 } from "../redux/slices/garageApiSlice";
 import { useCreateChatMutation } from "../redux/slices/chatApiSlice";
 import { useSelector } from "react-redux";
@@ -72,6 +77,10 @@ export default function GarageDetailPage() {
   const [editCarData, setEditCarData] = useState({ make: "", model: "", year: new Date().getFullYear(), color: "", imageFiles: [], imagePreviews: [] });
   const editCarImageInputRef = useRef(null);
 
+  const [deleteCarConfirm, setDeleteCarConfirm] = useState(null);
+  const [deletePostConfirm, setDeletePostConfirm] = useState(null);
+  const [deleteGarageConfirm, setDeleteGarageConfirm] = useState(false);
+
   const { data, isLoading, isError } = useGetGarageQuery(id, { skip: !id || isNaN(id) });
   const { data: carsData } = useGetGarageCarsQuery({ garageId: id, page: 1, limit: 20 }, { skip: !id || tab !== 0 });
 
@@ -97,7 +106,10 @@ export default function GarageDetailPage() {
   const [createPost, { isLoading: postCreating }] = useCreatePostMutation();
   const [addCar, { isLoading: carCreating }] = useAddCarMutation();
   const [updateCar, { isLoading: carUpdating }] = useUpdateCarMutation();
+  const [deleteCar, { isLoading: carDeleting }] = useDeleteCarMutation();
   const [updateGarage, { isLoading: updatingCover }] = useUpdateGarageMutation();
+  const [deleteGarage, { isLoading: garageDeleting }] = useDeleteGarageMutation();
+  const [deletePost, { isLoading: postDeleting }] = useDeletePostMutation();
 
   const garage = data?.garage;
   const cars = carsData?.cars ?? [];
@@ -343,6 +355,39 @@ export default function GarageDetailPage() {
     }
   };
 
+  const handleDeleteCar = async () => {
+    if (!deleteCarConfirm) return;
+    try {
+      await deleteCar({ garageId: id, carId: deleteCarConfirm.id }).unwrap();
+      toast.success("Car deleted");
+      setDeleteCarConfirm(null);
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete car");
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!deletePostConfirm) return;
+    try {
+      await deletePost(deletePostConfirm.id).unwrap();
+      toast.success("Post deleted");
+      setDeletePostConfirm(null);
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete post");
+    }
+  };
+
+  const handleDeleteGarage = async () => {
+    try {
+      await deleteGarage(id).unwrap();
+      toast.success("Garage deleted");
+      setDeleteGarageConfirm(false);
+      navigate("/garages");
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete garage");
+    }
+  };
+
   if (isLoading || isError || !garage) {
     return (
       <Box sx={{ py: 6, display: "flex", justifyContent: "center", minHeight: "50vh" }}>
@@ -408,6 +453,16 @@ export default function GarageDetailPage() {
               </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+              {isOwner && (
+                <Button
+                  variant="outlined"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => setDeleteGarageConfirm(true)}
+                  sx={{ borderRadius: 2, textTransform: "none", borderColor: "#f87171", color: "#f87171", "&:hover": { bgcolor: "rgba(239,68,68,0.1)", borderColor: "#ef4444" } }}
+                >
+                  Delete Garage
+                </Button>
+              )}
               {user && !isOwner && (
                 showUnfollow ? (
                   <Button
@@ -491,14 +546,24 @@ export default function GarageDetailPage() {
                     onClick={() => navigate(`/garages/${id}/cars/${car.id}`)}
                   >
                     {isOwner && (
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); handleOpenEditCar(car); }}
-                        sx={{ position: "absolute", top: 8, right: 8, zIndex: 1, bgcolor: "rgba(0,0,0,0.5)", color: "white", "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
-                        title="Edit car"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
+                      <Box sx={{ position: "absolute", top: 8, right: 8, zIndex: 1, display: "flex", gap: 0.5 }}>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); handleOpenEditCar(car); }}
+                          sx={{ bgcolor: "rgba(0,0,0,0.5)", color: "white", "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
+                          title="Edit car"
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          size="small"
+                          onClick={(e) => { e.stopPropagation(); setDeleteCarConfirm(car); }}
+                          sx={{ bgcolor: "rgba(0,0,0,0.5)", color: "#f87171", "&:hover": { bgcolor: "rgba(239,68,68,0.8)", color: "white" } }}
+                          title="Delete car"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     )}
                     <Box sx={{ aspectRatio: "4/3", overflow: "hidden", flexShrink: 0 }}>
                       <CardMedia
@@ -555,11 +620,22 @@ export default function GarageDetailPage() {
                       maxWidth: 400,
                       minWidth: 0,
                       mx: "auto",
+                      position: "relative",
                       transition: "transform 0.2s, boxShadow 0.2s",
                       "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 24px rgba(0,0,0,0.3)" },
                     }}
                     onClick={() => navigate(`/posts/${post.id}`)}
                   >
+                    {isOwner && (
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); setDeletePostConfirm(post); }}
+                        sx={{ position: "absolute", top: 8, right: 8, zIndex: 1, bgcolor: "rgba(0,0,0,0.5)", color: "#f87171", "&:hover": { bgcolor: "rgba(239,68,68,0.8)", color: "white" } }}
+                        title="Delete post"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
                     <Box sx={{ aspectRatio: "4/3", overflow: "hidden", flexShrink: 0 }}>
                       <CardMedia
                         component="img"
@@ -809,6 +885,78 @@ export default function GarageDetailPage() {
           <Button onClick={() => setCarDialogOpen(false)} sx={{ color: "#94a3b8" }}>Cancel</Button>
           <Button onClick={handleAddCar} variant="contained" disabled={carCreating} sx={{ backgroundColor: "#38bdf8", "&:hover": { backgroundColor: "#0ea5e9" } }}>
             {carCreating ? <CircularProgress size={24} /> : "Add"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Delete Car Confirmation ── */}
+      <Dialog
+        open={!!deleteCarConfirm}
+        onClose={() => setDeleteCarConfirm(null)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } } }}
+      >
+        <DialogTitle sx={{ color: "white", display: "flex", alignItems: "center", gap: 1 }}>
+          <WarningAmberIcon sx={{ color: "#f87171" }} /> Delete Car
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "#94a3b8" }}>
+            Are you sure you want to delete <strong style={{ color: "white" }}>{deleteCarConfirm?.make} {deleteCarConfirm?.model}</strong>? This cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button onClick={() => setDeleteCarConfirm(null)} sx={{ color: "#94a3b8" }}>Cancel</Button>
+          <Button onClick={handleDeleteCar} variant="contained" disabled={carDeleting} sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" } }}>
+            {carDeleting ? <CircularProgress size={20} /> : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Delete Post Confirmation ── */}
+      <Dialog
+        open={!!deletePostConfirm}
+        onClose={() => setDeletePostConfirm(null)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } } }}
+      >
+        <DialogTitle sx={{ color: "white", display: "flex", alignItems: "center", gap: 1 }}>
+          <WarningAmberIcon sx={{ color: "#f87171" }} /> Delete Post
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "#94a3b8" }}>
+            Are you sure you want to delete <strong style={{ color: "white" }}>{deletePostConfirm?.title || "this post"}</strong>? This cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button onClick={() => setDeletePostConfirm(null)} sx={{ color: "#94a3b8" }}>Cancel</Button>
+          <Button onClick={handleDeletePost} variant="contained" disabled={postDeleting} sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" } }}>
+            {postDeleting ? <CircularProgress size={20} /> : "Delete"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Delete Garage Confirmation ── */}
+      <Dialog
+        open={deleteGarageConfirm}
+        onClose={() => setDeleteGarageConfirm(false)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { backgroundColor: "#1e293b", border: "1px solid rgba(255,255,255,0.08)" } } }}
+      >
+        <DialogTitle sx={{ color: "white", display: "flex", alignItems: "center", gap: 1 }}>
+          <WarningAmberIcon sx={{ color: "#f87171" }} /> Delete Garage
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "#94a3b8" }}>
+            Are you sure you want to permanently delete <strong style={{ color: "white" }}>{garage?.name}</strong>? All cars, posts, and followers will be removed. This cannot be undone.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+          <Button onClick={() => setDeleteGarageConfirm(false)} sx={{ color: "#94a3b8" }}>Cancel</Button>
+          <Button onClick={handleDeleteGarage} variant="contained" disabled={garageDeleting} sx={{ bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" } }}>
+            {garageDeleting ? <CircularProgress size={20} /> : "Delete Garage"}
           </Button>
         </DialogActions>
       </Dialog>
