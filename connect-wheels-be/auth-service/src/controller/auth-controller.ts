@@ -51,6 +51,25 @@ const loginUser = async (req: Request, res: Response) => {
   }
 };
 
+const verifyEmail = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Verification token is required" });
+    }
+
+    const result = await authService.verifyEmail(token);
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+
+    return res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error("verifyEmail error:", error);
+    return res.status(500).json({ message: "Error verifying email" });
+  }
+};
+
 // Google OAuth - Get authorization URL
 const getGoogleAuthUrl = async (req: Request, res: Response) => {
   try {
@@ -92,6 +111,7 @@ const Authcontroller = {
   loginUser,
   getGoogleAuthUrl,
   handleGoogleCallback,
+  verifyEmail,
 };
 
 export default Authcontroller;

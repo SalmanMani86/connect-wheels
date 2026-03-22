@@ -35,7 +35,7 @@ const KafkaConsumer = async ({
     console.log(`Consumer running on topic: ${topic}`);
   } catch (err) {
     console.error(`Failed to start consumer for topic ${topic}:`, err);
-    process.exit(1);
+    throw err;
   }
 };
 

@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
 } from "typeorm";
 
 @Entity("app_user")
@@ -27,10 +28,27 @@ export class User {
 
   @Column({ nullable: true })
   googleRefreshToken!: string;
-  @Column({ default: 'user' })  // ← ADD THIS FIELD
-  role!: string;                // ← ADD THIS FIELD
+  @Column({ default: 'user' })
+  role!: string;
 
+  @Column({ default: false })
+  isEmailVerified!: boolean;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  emailVerificationToken!: string | null;
+
+  @Column({ type: "timestamptz", nullable: true })
+  emailVerificationTokenExpiresAt!: Date | null;
+
+  @Column({ type: "varchar", length: 255, nullable: true })
+  resetPasswordToken!: string | null;
+
+  @Column({ type: "timestamptz", nullable: true })
+  resetPasswordTokenExpiresAt!: Date | null;
 
   @CreateDateColumn()
   createdAt!: Date;
+
+  @UpdateDateColumn()
+  updatedAt!: Date;
 }
