@@ -54,18 +54,29 @@ const loginUser = async (req: Request, res: Response) => {
 const verifyEmail = async (req: Request, res: Response) => {
   try {
     const { token } = req.query;
+    console.log("[verifyEmail] incoming request", {
+      path: req.path,
+      query: req.query,
+      token,
+    });
+
     if (!token || typeof token !== "string") {
-      return res.status(400).json({ message: "Verification token is required" });
+      console.log("[verifyEmail] missing or invalid token param");
+      return res
+        .status(400)
+        .json({ message: "Verification token is required" });
     }
 
     const result = await authService.verifyEmail(token);
+    console.log("[verifyEmail] service result", result);
+
     if (!result.success) {
       return res.status(400).json({ message: result.message });
     }
 
     return res.status(200).json({ message: result.message });
   } catch (error) {
-    console.error("verifyEmail error:", error);
+    console.error("[verifyEmail] unexpected error:", error);
     return res.status(500).json({ message: "Error verifying email" });
   }
 };

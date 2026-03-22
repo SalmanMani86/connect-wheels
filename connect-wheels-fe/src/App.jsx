@@ -11,6 +11,7 @@ import PublicRoute from "./routes/public-route";
 import Layout from "./components/layout";
 import LoginPage from "./auth-pages/login-page";
 import SignupPage from "./auth-pages/sign-up-page";
+import VerifyEmailPage from "./auth-pages/verify-email-page";
 import NotFoundPage from "./pages/not-found";
 import DashboardPage from "./pages/dashboard";
 import ChatPage from "./pages/chat";
@@ -40,6 +41,14 @@ const router = createBrowserRouter([
     element: (
       <PublicRoute>
         <SignupPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/verify-email",
+    element: (
+      <PublicRoute>
+        <VerifyEmailPage />
       </PublicRoute>
     ),
   },
