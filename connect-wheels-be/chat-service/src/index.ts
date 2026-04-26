@@ -23,7 +23,7 @@ dotenv.config();
 
 // Initialize Express app
 const app: Express = express();
-const PORT = process.env.CHAT_SERVICE_PORT || 3001;
+const PORT = process.env.PORT || process.env.CHAT_SERVICE_PORT || 3001;
 
 // Create HTTP server (needed for Socket.IO)
 const httpServer = createServer(app);
