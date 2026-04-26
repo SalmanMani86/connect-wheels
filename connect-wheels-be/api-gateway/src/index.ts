@@ -102,6 +102,7 @@ const authProxyOptions: Options = {
     );
   },
   onProxyRes: (proxyRes, req: Request) => {
+    stripUpstreamCors(proxyRes as never);
     console.log(`[AUTH-SERVICE] Response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
   },
   onError: (err: Error, req: Request, res: Response) => {
@@ -136,6 +137,7 @@ const userProxyOptions: Options = {
     );
   },
   onProxyRes: (proxyRes, req: Request) => {
+    stripUpstreamCors(proxyRes as never);
     console.log(`[USER-SERVICE] Response: ${proxyRes.statusCode} for ${req.method} ${req.url}`);
   },
   onError: (err: Error, req: Request, res: Response) => {
@@ -153,6 +155,17 @@ const userProxyOptions: Options = {
 
 app.use('/api/user', createProxyMiddleware(userProxyOptions));
 
+// Strip CORS headers from upstream responses. We let the gateway's own
+// `cors` middleware add the correct headers based on the request origin.
+// Otherwise upstream-set headers (e.g. with a stale FRONTEND_URL) leak through.
+const stripUpstreamCors = (proxyRes: { headers: Record<string, string | string[] | undefined> }) => {
+  delete proxyRes.headers['access-control-allow-origin'];
+  delete proxyRes.headers['access-control-allow-credentials'];
+  delete proxyRes.headers['access-control-allow-methods'];
+  delete proxyRes.headers['access-control-allow-headers'];
+  delete proxyRes.headers['access-control-expose-headers'];
+};
+
 // Chat Service Proxy (REST API)
 const chatProxyOptions: Options = {
   target: process.env.CHAT_SERVICE_URL || 'http://localhost:3001',
@@ -166,6 +179,7 @@ const chatProxyOptions: Options = {
     );
   },
   onProxyRes: (proxyRes) => {
+    stripUpstreamCors(proxyRes as never);
     console.log(`[CHAT-SERVICE] Response: ${proxyRes.statusCode}`);
   },
   onError: (err: Error, _req: Request, res: Response) => {
@@ -218,6 +232,7 @@ const garageProxyOptions: Options = {
     );
   },
   onProxyRes: (proxyRes) => {
+    stripUpstreamCors(proxyRes as never);
     console.log(`[GARAGE-SERVICE] Response: ${proxyRes.statusCode}`);
   },
   onError: (err: Error, _req: Request, res: Response) => {

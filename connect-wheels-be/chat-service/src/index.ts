@@ -29,10 +29,35 @@ const PORT = process.env.PORT || process.env.CHAT_SERVICE_PORT || 3001;
 // Create HTTP server (needed for Socket.IO)
 const httpServer = createServer(app);
 
+// Allowed CORS origins — comma-separated list. Falls back through several env vars.
+const allowedOrigins = (
+  process.env.CORS_ORIGINS ||
+  process.env.WEBSOCKET_CORS_ORIGIN ||
+  process.env.FRONTEND_URL ||
+  "http://localhost:5173"
+)
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const corsOriginCheck = (
+  origin: string | undefined,
+  cb: (err: Error | null, allow?: boolean) => void
+) => {
+  if (!origin) return cb(null, true);
+  if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+    return cb(null, true);
+  }
+  console.warn(
+    `[chat-service][CORS] Blocked origin: ${origin}. Allowed: ${allowedOrigins.join(", ")}`
+  );
+  return cb(new Error(`CORS blocked for origin: ${origin}`));
+};
+
 // Initialize Socket.IO server
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.WEBSOCKET_CORS_ORIGIN || "http://localhost:5173",
+    origin: corsOriginCheck,
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -44,7 +69,7 @@ const io = new Server(httpServer, {
 // CORS middleware for REST API
 app.use(
   cors({
-    origin: process.env.WEBSOCKET_CORS_ORIGIN || "http://localhost:5173",
+    origin: corsOriginCheck,
     credentials: true,
   })
 );
