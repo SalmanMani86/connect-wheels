@@ -103,14 +103,15 @@ const handleGoogleCallback = async (req: Request, res: Response) => {
     const result = await processGoogleCallback(code as string);
     const jwt = authService.generateJWT(result.user);
 
-    // Redirect to frontend with token and user data
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     res.redirect(
-      `http://localhost:5173/?token=${jwt}&userId=${result.user.id}&email=${result.user.email}`
+      `${frontendUrl}/?token=${jwt}&userId=${result.user.id}&email=${result.user.email}`
     );
   } catch (error) {
     console.error("Google callback error:", error);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     res.redirect(
-      `http://localhost:5173/?message=${encodeURIComponent(
+      `${frontendUrl}/?message=${encodeURIComponent(
         "Google authentication failed"
       )}`
     );
