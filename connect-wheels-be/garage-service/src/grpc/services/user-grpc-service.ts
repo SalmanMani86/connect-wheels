@@ -2,25 +2,32 @@ import { userClient } from '../clients/user-client';
 
 const USE_GRPC = process.env.USE_GRPC !== 'false';
 
-const checkUserHttp = async (userId: number): Promise<boolean> => {
-  const baseUrl = process.env.AUTH_SERVICE_HTTP_URL || 'http://localhost:3000';
+const checkUserHttp = async (userId: number | string): Promise<boolean> => {
+  const baseUrl = (
+    process.env.AUTH_SERVICE_HTTP_URL ||
+    process.env.AUTH_SERVICE_URL ||
+    'http://localhost:3000'
+  ).replace(/\/+$/, ''); // strip trailing slashes
+  const url = `${baseUrl}/user/internal/exists/${userId}`;
   try {
-    const res = await fetch(`${baseUrl}/user/internal/exists/${userId}`);
+    console.log('[checkUserHttp] GET', url);
+    const res = await fetch(url);
     if (!res.ok) {
-      console.error('[checkUserHttp] non-2xx', res.status);
+      console.error('[checkUserHttp] non-2xx', res.status, 'for', url);
       return false;
     }
     const data: any = await res.json();
+    console.log('[checkUserHttp] response', data, 'for userId=', userId);
     return !!data.exists;
   } catch (err) {
-    console.error('[checkUserHttp] error:', err);
+    console.error('[checkUserHttp] error for', url, ':', err);
     return false;
   }
 };
 
 // CheckUser RPC: gRPC by default, HTTP fallback when USE_GRPC=false.
 // On Render free tier we set USE_GRPC=false because only one public port is available per service.
-export const checkUserGrpc = (userId: number): Promise<boolean> => {
+export const checkUserGrpc = (userId: number | string): Promise<boolean> => {
   if (!USE_GRPC) {
     return checkUserHttp(userId);
   }

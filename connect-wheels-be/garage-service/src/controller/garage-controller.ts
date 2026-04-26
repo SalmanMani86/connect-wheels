@@ -13,8 +13,9 @@ const createGarage = async (req: AuthRequest, res: Response): Promise<void> => {
     return;
   }
 
-  const userId = req.body?.userID ?? req.user?.id ?? req.user?.userId;
-  if (!userId) {
+  const rawUserId = req.body?.userID ?? req.user?.id ?? req.user?.userId;
+  const userId = typeof rawUserId === 'string' ? parseInt(rawUserId, 10) : rawUserId;
+  if (!userId || Number.isNaN(userId)) {
     res.status(400).json({ message: 'User ID is required' });
     return;
   }
