@@ -19,9 +19,12 @@ export const SignupForm = () => {
 
   const handleSubmit = async (values, { resetForm }) => {
     try {
-      await registerUser(values).unwrap();
+      const res = await registerUser(values).unwrap();
       resetForm();
-      toast.success("Registration successful! Please login.");
+      const msg =
+        res?.message ||
+        "Registration successful! Please check your email to verify your account.";
+      toast.success(msg);
       navigate("/login");
     } catch (error) {
       const errorMessage =

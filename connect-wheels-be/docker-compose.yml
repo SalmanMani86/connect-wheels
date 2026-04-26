@@ -1,0 +1,195 @@
+version: '3.9'
+
+services:
+
+  # ─────────────────────────────────────────────
+  # INFRASTRUCTURE
+  # ─────────────────────────────────────────────
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: cw-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: salman123
+      POSTGRES_DB: connect_wheels
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"   # 5433 on host to avoid conflict with local PostgreSQL
+    networks:
+      - cw-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d connect_wheels"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo:
+    image: mongo:7-jammy
+    container_name: cw-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27018:27017"  # 27018 on host to avoid conflict with local MongoDB
+    networks:
+      - cw-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: cw-zookeeper
+    restart: unless-stopped
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - cw-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: cw-kafka
+    restart: unless-stopped
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"  # 29092 on host for external Kafka access
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - cw-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # MICROSERVICES
+  # ─────────────────────────────────────────────
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: cw-auth
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: admin
+      DB_PASSWORD: salman123
+      DB_DATABASE: connect_wheels
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-778268093572-4ne17c1sqr0kq84s55uuce2a0n47vltd.apps.googleusercontent.com}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-http://localhost:3000/auth/google/callback}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-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}
+    ports:
+      - "3000:3000"
+      - "50051:50051"
+    networks:
+      - cw-network
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
+    container_name: cw-chat
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      CHAT_SERVICE_PORT: 3001
+      MONGODB_URI: mongodb://mongo:27017/connect-wheels-chat
+      WEBSOCKET_CORS_ORIGIN: http://localhost:5173
+      JWT_SECRET: ${JWT_SECRET:-your-jwt-secret}
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: admin
+      DB_PASSWORD: salman123
+      DB_DATABASE: connect_wheels_chat
+    ports:
+      - "3001:3001"
+    networks:
+      - cw-network
+
+  garage-service:
+    build:
+      context: .
+      dockerfile: garage-service/Dockerfile
+    container_name: cw-garage
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth-service:
+        condition: service_started
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: admin
+      DB_PASSWORD: salman123
+      DB_DATABASE: garage
+      PORT: 3002
+      AUTH_SERVICE_URL: auth-service:50051
+      KAFKA_BROKER: kafka:9092
+    ports:
+      - "3002:3002"
+    volumes:
+      - garage_uploads:/app/garage-service/uploads
+    networks:
+      - cw-network
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: cw-gateway
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - chat-service
+      - garage-service
+    environment:
+      PORT: 8080
+      AUTH_SERVICE_URL: http://auth-service:3000
+      CHAT_SERVICE_URL: http://chat-service:3001
+      GARAGE_SERVICE_URL: http://garage-service:3002
+      FRONTEND_URL: http://localhost:5173
+      NODE_ENV: development
+    ports:
+      - "8080:8080"
+    networks:
+      - cw-network
+
+# ─────────────────────────────────────────────
+# VOLUMES & NETWORKS
+# ─────────────────────────────────────────────
+
+volumes:
+  postgres_data:
+  mongo_data:
+  garage_uploads:
+
+networks:
+  cw-network:
+    driver: bridge

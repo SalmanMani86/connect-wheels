@@ -26,6 +26,13 @@ export const apiSlice = createApi({
       invalidatesTags: ["Auth"],
     }),
     
+    verifyEmail: builder.mutation({
+      query: (token) => ({
+        url: `/auth/verify-email?token=${encodeURIComponent(token)}`,
+        method: "GET",
+      }),
+    }),
+    
     loginWithGoogle: builder.query({
       query: () => "/auth/google",
       providesTags: ["Auth"],
@@ -67,6 +74,7 @@ export const apiSlice = createApi({
 export const {
   useLoginUserMutation,
   useRegisterUserMutation,
+  useVerifyEmailMutation,
   useLoginWithGoogleQuery,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,

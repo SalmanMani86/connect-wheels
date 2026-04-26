@@ -21,7 +21,10 @@ export const LoginForm = () => {
   // Show toast when there's an error
   useEffect(() => {
     if (error) {
-      const errorMessage = error?.data?.message || error?.message || "Login failed";
+      const rawMessage = error?.data?.message || error?.message || "Login failed";
+      const errorMessage = rawMessage.includes("Email not verified")
+        ? "Your email is not verified. Please check your inbox or spam folder."
+        : rawMessage;
       toast.error(errorMessage);
       dispatch(setError(errorMessage));
     }

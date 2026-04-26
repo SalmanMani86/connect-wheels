@@ -8,8 +8,17 @@ import { loginSuccess } from "./redux/slices/userSlice";
 // Process token BEFORE React renders
 const urlParams = new URLSearchParams(window.location.search);
 const token = urlParams.get("token");
-if (token) {
-  const user = { id: urlParams.get("userId"), email: urlParams.get("email") };
+const userId = urlParams.get("userId");
+const email = urlParams.get("email");
+
+// Only auto-login when coming from Google OAuth callback,
+// which includes token + userId/email on the root path.
+if (
+  token &&
+  (userId || email) &&
+  window.location.pathname === "/"
+) {
+  const user = { id: userId, email };
   store.dispatch(loginSuccess({ user, token }));
   window.history.replaceState({}, document.title, "/");
 }
