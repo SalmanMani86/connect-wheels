@@ -10,6 +10,8 @@ import cors from "cors";
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || "http://localhost:5173")
   .split(',')
   .map(o => o.trim())

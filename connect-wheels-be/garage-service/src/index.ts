@@ -26,6 +26,8 @@ process.on('exit', (code) => {
 const app = express();
 const PORT = parseInt(process.env.PORT || '3002', 10);
 
+app.set('trust proxy', 1);
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',

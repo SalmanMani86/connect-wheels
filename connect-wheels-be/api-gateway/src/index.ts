@@ -10,6 +10,7 @@ dotenv.config();
 
 // Initialize Express app
 const app: Express = express();
+app.set('trust proxy', 1);
 const PORT: number = parseInt(process.env.PORT || '8080', 10);
 
 // ===== MIDDLEWARE SETUP =====

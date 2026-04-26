@@ -23,6 +23,7 @@ dotenv.config();
 
 // Initialize Express app
 const app: Express = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || process.env.CHAT_SERVICE_PORT || 3001;
 
 // Create HTTP server (needed for Socket.IO)
