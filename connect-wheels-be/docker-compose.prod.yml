@@ -1,0 +1,137 @@
+# =====================================================================
+# docker-compose.prod.yml
+# ---------------------------------------------------------------------
+# LOCAL production-like test before pushing to Render.
+# Uses the same Dockerfiles Render will use, with NODE_ENV=production.
+# Database secrets come from a real .env.prod file (NOT committed).
+#
+# Usage:
+#   1. Copy `.env.prod.example` to `.env.prod` and fill in real values
+#      (Neon DB url, Atlas Mongo URI, JWT secret, etc.)
+#   2. Run:  docker compose -f docker-compose.prod.yml --env-file .env.prod up --build
+#   3. Test: curl http://localhost:8080/health
+#
+# This compose file does NOT run Postgres/Mongo locally — it expects
+# those to be the real cloud DBs (Neon + Atlas). That's the same setup
+# you'll have on Render, so any bugs surface here first.
+# =====================================================================
+
+version: '3.9'
+
+services:
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: cw-auth-prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      ENABLE_GRPC: "false"
+      ENABLE_KAFKA: "false"
+      DB_SYNCHRONIZE: "true"
+      DB_SSL: "true"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      FRONTEND_VERIFY_EMAIL_URL: ${FRONTEND_VERIFY_EMAIL_URL:-http://localhost:5173/verify-email}
+    ports:
+      - "3000:3000"
+    networks:
+      - cw-prod
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: chat-service/Dockerfile
+    container_name: cw-chat-prod
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      CHAT_SERVICE_PORT: 3001
+      PORT: 3001
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      WEBSOCKET_CORS_ORIGIN: ${CORS_ORIGINS:-http://localhost:5173}
+    ports:
+      - "3001:3001"
+    networks:
+      - cw-prod
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  garage-service:
+    build:
+      context: .
+      dockerfile: garage-service/Dockerfile
+    container_name: cw-garage-prod
+    restart: unless-stopped
+    depends_on:
+      auth-service:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      USE_GRPC: "false"
+      DB_SYNCHRONIZE: "true"
+      DB_SSL: "true"
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${GARAGE_DB_DATABASE:-${DB_DATABASE}}
+      JWT_SECRET: ${JWT_SECRET}
+      AUTH_SERVICE_HTTP_URL: http://auth-service:3000
+    ports:
+      - "3002:3002"
+    networks:
+      - cw-prod
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: cw-gateway-prod
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - chat-service
+      - garage-service
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      AUTH_SERVICE_URL: http://auth-service:3000
+      CHAT_SERVICE_URL: http://chat-service:3001
+      GARAGE_SERVICE_URL: http://garage-service:3002
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "8080:8080"
+    networks:
+      - cw-prod
+
+networks:
+  cw-prod:
+    driver: bridge

@@ -4,7 +4,9 @@ import { createBaseQueryWithReauth } from "../baseQueryWithReauth";
 // Create the API slice with auto-logout on 401
 export const apiSlice = createApi({
   reducerPath: "api",
-  baseQuery: createBaseQueryWithReauth("http://localhost:8080/api"),
+  baseQuery: createBaseQueryWithReauth(
+    import.meta.env.VITE_API_URL || "http://localhost:8080/api"
+  ),
   tagTypes: ["User", "Auth"],
   endpoints: (builder) => ({
     // Auth endpoints

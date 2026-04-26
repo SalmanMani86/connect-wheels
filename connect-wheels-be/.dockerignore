@@ -1,9 +1,54 @@
+# Dependencies — installed inside the image
+node_modules
 **/node_modules
+
+# Build output
+dist
 **/dist
+build
+**/build
+
+# Env files — secrets injected via platform UI, never baked into image
+.env
+.env.*
 **/.env
-**/*.log
-**/npm-debug.log*
-**/yarn-debug.log*
-**/yarn-error.log*
-**/uploads
-**/.DS_Store
+**/.env.*
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+
+# Git
+.git
+.gitignore
+
+# Local user uploads (dev artifacts)
+**/uploads/garage-covers/*
+**/uploads/posts/*
+**/uploads/cars/*
+!**/uploads/.gitkeep
+
+# Logs / coverage
+*.log
+npm-debug.log*
+coverage
+
+# Docs
+README.md
+**/README.md
+*.md
+**/*.md
+!Dockerfile
+
+# Local docker
+docker-compose.yml
+docker-compose.*.yml
+
+# Test
+**/__tests__
+**/*.test.ts
+**/*.spec.ts
+
+# Frontend (don't ship FE inside backend image)
+../connect-wheels-fe

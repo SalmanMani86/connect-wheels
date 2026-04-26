@@ -4,7 +4,9 @@ import { createBaseQueryWithReauth } from "../baseQueryWithReauth";
 // Create the Chat API slice with auto-logout on 401
 export const chatApiSlice = createApi({
   reducerPath: "chatApi",
-  baseQuery: createBaseQueryWithReauth("http://localhost:8080/api"),
+  baseQuery: createBaseQueryWithReauth(
+    import.meta.env.VITE_API_URL || "http://localhost:8080/api"
+  ),
   tagTypes: ["Chat", "Message", "UnreadCount"],
   endpoints: (builder) => ({
     // Chat endpoints

@@ -5,7 +5,9 @@ const GARAGE_BASE = "/garage";
 
 export const garageApiSlice = createApi({
   reducerPath: "garageApi",
-  baseQuery: createBaseQueryWithReauth("http://localhost:8080/api"),
+  baseQuery: createBaseQueryWithReauth(
+    import.meta.env.VITE_API_URL || "http://localhost:8080/api"
+  ),
   tagTypes: ["Garage", "Car", "Post", "Feed", "Comment", "Like", "Follow", "Notification"],
   endpoints: (builder) => ({
     // Garage CRUD

@@ -1,8 +1,12 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-only-insecure-secret-change-me';
 
-const JWT_SECRET = 'your-jwt-secret';
+if (!process.env.JWT_SECRET) {
+  console.warn('[auth-middleware] WARNING: JWT_SECRET env var is not set. Using insecure dev default.');
+}
+
 export interface AuthRequest extends Request {
   user?: any;
 }
@@ -13,13 +17,10 @@ export const authenticateJWT = (req: AuthRequest, res: Response, next: NextFunct
   if (authHeader) {
     const token = authHeader.split(' ')[1];
     try {
-      console.log("token", token)
-      console.log('JWT_SECRET in verify:', JWT_SECRET);
       const user = jwt.verify(token, JWT_SECRET);
       req.user = user;
       next();
     } catch (err) {
-      console.log("error", err)
       res.status(403).json({ message: 'Invalid or expired token' });
     }
   } else {

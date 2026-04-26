@@ -1,0 +1,176 @@
+# =====================================================================
+# Render Blueprint for Connect Wheels
+# ---------------------------------------------------------------------
+# Deploys all 4 backend microservices on Render's free tier.
+# Connect this repo on Render -> "New" -> "Blueprint" -> select repo
+# Render will read THIS file and create every service automatically.
+#
+# AFTER deploy, you must add SECRET env vars manually in the Render UI:
+#   - JWT_SECRET            (same value for ALL services that verify JWT)
+#   - DB_PASSWORD           (your Neon postgres password)
+#   - GOOGLE_CLIENT_SECRET  (if using Google OAuth)
+#   - MONGODB_URI           (your MongoDB Atlas connection string)
+#   - GOOGLE_CLIENT_ID      (or set sync: false here and add manually)
+#
+# Free-tier note: services SLEEP after 15 min of inactivity.
+# First request after sleep takes ~30-60s ("cold start").
+# =====================================================================
+
+services:
+  # -------------------------------------------------------------------
+  # 1) Auth Service — JWT issuer, user accounts, Google OAuth
+  # -------------------------------------------------------------------
+  - type: web
+    name: cw-auth-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./connect-wheels-be/auth-service/Dockerfile
+    dockerContext: ./connect-wheels-be
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Disable gRPC server in prod (Render exposes only one port per service).
+      # Garage service will call /user/internal/exists/:id over HTTP instead.
+      - key: ENABLE_GRPC
+        value: "false"
+      - key: ENABLE_KAFKA
+        value: "false"
+      - key: DB_SYNCHRONIZE
+        value: "true"
+      - key: DB_SSL
+        value: "true"
+
+      # Database — Neon (free serverless Postgres). Set values in Render UI.
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+
+      # Secrets — fill in via Render UI, never commit.
+      - key: JWT_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+
+      # CORS — comma separated allowlist of frontend origins
+      - key: CORS_ORIGINS
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: FRONTEND_VERIFY_EMAIL_URL
+        sync: false
+
+  # -------------------------------------------------------------------
+  # 2) Chat Service — Socket.IO + REST, MongoDB-backed
+  # -------------------------------------------------------------------
+  - type: web
+    name: cw-chat-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./connect-wheels-be/chat-service/Dockerfile
+    dockerContext: ./connect-wheels-be
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CHAT_SERVICE_PORT
+        value: 3001
+      - key: PORT
+        value: 3001
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: WEBSOCKET_CORS_ORIGIN
+        sync: false
+
+  # -------------------------------------------------------------------
+  # 3) Garage Service — garages, cars, posts, image uploads
+  # -------------------------------------------------------------------
+  - type: web
+    name: cw-garage-service
+    runtime: docker
+    plan: free
+    dockerfilePath: ./connect-wheels-be/garage-service/Dockerfile
+    dockerContext: ./connect-wheels-be
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3002
+      - key: USE_GRPC
+        value: "false"
+      - key: DB_SYNCHRONIZE
+        value: "true"
+      - key: DB_SSL
+        value: "true"
+
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: 5432
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+
+      - key: JWT_SECRET
+        sync: false
+
+      # Internal HTTP URL of auth-service (e.g. https://cw-auth-service.onrender.com)
+      - key: AUTH_SERVICE_HTTP_URL
+        fromService:
+          type: web
+          name: cw-auth-service
+          property: hostport
+          # ^ resolves to "cw-auth-service.onrender.com:443"; we override below if needed.
+        # If `fromService` doesn't resolve to a usable URL on your plan, set this manually instead.
+
+  # -------------------------------------------------------------------
+  # 4) API Gateway — single entry point for the frontend
+  # -------------------------------------------------------------------
+  - type: web
+    name: cw-api-gateway
+    runtime: docker
+    plan: free
+    dockerfilePath: ./connect-wheels-be/api-gateway/Dockerfile
+    dockerContext: ./connect-wheels-be
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+
+      # Internal URLs of the other services. Render's `fromService` block can pre-fill
+      # these, but the simplest approach is to paste the public URLs after first deploy
+      # (e.g. https://cw-auth-service.onrender.com). Keep them as `sync: false`.
+      - key: AUTH_SERVICE_URL
+        sync: false
+      - key: CHAT_SERVICE_URL
+        sync: false
+      - key: GARAGE_SERVICE_URL
+        sync: false
+
+      - key: FRONTEND_URL
+        sync: false

@@ -9,7 +9,11 @@ import { LoginUserDTO } from "../dtos/loginUserDto";
 import { publishEvent } from "../../../common/messaging/kafka/producer";
 import { AUTH_EMAIL_VERIFICATION } from "../../../common/messaging/kafka/topics";
 
-const JWT_SECRET = "your-jwt-secret";
+const JWT_SECRET: string = process.env.JWT_SECRET || "dev-only-insecure-secret-change-me";
+
+if (!process.env.JWT_SECRET) {
+  console.warn("[auth-service] WARNING: JWT_SECRET env var is not set. Using insecure dev default.");
+}
 
 export const registerUser = async (user: CreateUserDTO) => {
   try {

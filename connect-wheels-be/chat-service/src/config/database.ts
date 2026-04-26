@@ -3,9 +3,12 @@ import dotenv from "dotenv";
 dotenv.config();
 export const connectDatabase = async (): Promise<void> => {
   try {
-    const mongoUri =
-      process.env.MONGODB_URI ||
-      "mongodb+srv://salmanhanif524_db_user:WP0vEbC3dILo75cE@my-chat-cluster.15d6lmo.mongodb.net/";
+    const mongoUri = process.env.MONGODB_URI;
+
+    if (!mongoUri) {
+      console.error("[chat-service] FATAL: MONGODB_URI env var is not set.");
+      process.exit(1);
+    }
 
     await mongoose.connect(mongoUri);
 

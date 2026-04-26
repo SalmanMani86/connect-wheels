@@ -1,23 +1,41 @@
-FROM node:20-alpine
+# =====================================================================
+# Chat Service — production Dockerfile
+# Build context: connect-wheels-be/
+# =====================================================================
+
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
-# Install common module dependencies first (layer caching)
 COPY common/package*.json ./common/
-RUN cd common && npm install
+RUN cd common && npm ci --no-audit --no-fund --omit=optional
 
-# Copy common source
-COPY common/ ./common/
-
-# Install chat-service dependencies
 COPY chat-service/package*.json ./chat-service/
-RUN cd chat-service && npm install
+RUN cd chat-service && npm ci --no-audit --no-fund
 
-# Copy chat-service source
+
+# =====================================================================
+FROM node:20-alpine AS runner
+
+ENV NODE_ENV=production
+ENV NODE_OPTIONS="--dns-result-order=ipv4first"
+
+WORKDIR /app
+
+RUN apk add --no-cache dumb-init
+
+COPY --from=deps /app/common/node_modules ./common/node_modules
+COPY --from=deps /app/chat-service/node_modules ./chat-service/node_modules
+
+COPY common/ ./common/
 COPY chat-service/ ./chat-service/
+
+RUN addgroup -S app && adduser -S app -G app && chown -R app:app /app
+USER app
 
 WORKDIR /app/chat-service
 
 EXPOSE 3001
 
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["npm", "run", "start"]
