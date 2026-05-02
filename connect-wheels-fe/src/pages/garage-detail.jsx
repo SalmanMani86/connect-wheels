@@ -43,6 +43,7 @@ import {
   useUpdateGarageMutation,
   useDeleteGarageMutation,
   useDeletePostMutation,
+  useGetFollowingQuery,
 } from "../redux/slices/garageApiSlice";
 import { useCreateChatMutation } from "../redux/slices/chatApiSlice";
 import { useSelector } from "react-redux";
@@ -83,6 +84,10 @@ export default function GarageDetailPage() {
 
   const { data, isLoading, isError } = useGetGarageQuery(id, { skip: !id || isNaN(id) });
   const { data: carsData } = useGetGarageCarsQuery({ garageId: id, page: 1, limit: 20 }, { skip: !id || tab !== 0 });
+  const { data: followingData } = useGetFollowingQuery(
+    { userId: user?.id, page: 1, limit: 100 },
+    { skip: !user?.id }
+  );
 
   const processedEditCarRef = useRef(null);
   useEffect(() => {
@@ -115,6 +120,14 @@ export default function GarageDetailPage() {
   const cars = carsData?.cars ?? [];
   const posts = postsData?.posts ?? [];
   const isOwner = garage && user && Number(user.id) === Number(garage.ownerId);
+
+  useEffect(() => {
+    if (!id || !followingData?.following) return;
+    const isFollowing = followingData.following.some(
+      (item) => Number(item.garageId || item.garage?.id) === Number(id)
+    );
+    setIsFollowingLocal(isFollowing);
+  }, [id, followingData?.following]);
 
   const handleFollow = async () => {
     if (!user) {

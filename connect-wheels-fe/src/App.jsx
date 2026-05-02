@@ -15,7 +15,6 @@ import VerifyEmailPage from "./auth-pages/verify-email-page";
 import ForgotPasswordPage from "./auth-pages/forgot-password-page";
 import ResetPasswordPage from "./auth-pages/reset-password-page";
 import NotFoundPage from "./pages/not-found";
-import DashboardPage from "./pages/dashboard";
 import ChatPage from "./pages/chat";
 import SettingsPage from "./pages/settings";
 import GaragesPage from "./pages/garages";
@@ -84,7 +83,7 @@ const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <DashboardPage />,
+        element: <Navigate to="/feed" replace />,
       },
       {
         path: "feed",

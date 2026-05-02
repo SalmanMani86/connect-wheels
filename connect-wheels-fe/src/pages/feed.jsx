@@ -30,6 +30,8 @@ import {
   useLikePostMutation,
   useUnlikePostMutation,
   useBrowseCarsQuery,
+  useSearchGaragesQuery,
+  useGetUserGaragesQuery,
 } from "../redux/slices/garageApiSlice";
 import { useCreateChatMutation } from "../redux/slices/chatApiSlice";
 import { useSelector } from "react-redux";
@@ -225,6 +227,49 @@ function CarFeedCard({ car, currentUserId }) {
   );
 }
 
+function GarageDiscoveryCard({ garage }) {
+  const navigate = useNavigate();
+  const coverUrl = resolveImageUrl(
+    garage.coverImageUrl || garage.pictureUrl,
+    "https://images.unsplash.com/photo-1492144654654-21b3c0398737?w=600"
+  );
+
+  return (
+    <Card
+      onClick={() => navigate(`/garages/${garage.id}`)}
+      sx={{
+        minWidth: 230,
+        maxWidth: 260,
+        flex: "0 0 auto",
+        borderRadius: 2,
+        overflow: "hidden",
+        cursor: "pointer",
+        backgroundColor: "#1e293b",
+        color: "white",
+        border: "1px solid rgba(255,255,255,0.06)",
+        "&:hover": { transform: "translateY(-2px)", boxShadow: "0 8px 30px rgba(0,0,0,0.35)" },
+        transition: "all 0.2s",
+      }}
+    >
+      <CardMedia
+        component="img"
+        image={coverUrl}
+        alt={garage.name || "Garage"}
+        onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1492144654654-21b3c0398737?w=600"; }}
+        sx={{ height: 110, objectFit: "cover" }}
+      />
+      <CardContent sx={{ p: 1.5 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }} noWrap>
+          {garage.name || "Garage"}
+        </Typography>
+        <Typography variant="caption" sx={{ color: "#94a3b8" }}>
+          {garage.followersCount || 0} followers · {garage.carsCount || 0} cars
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Main Feed Page ──────────────────────────────────────────────────────────
 
 export default function FeedPage({ trending = false }) {
@@ -252,9 +297,21 @@ export default function FeedPage({ trending = false }) {
     { page: 1, limit: 24, q: carSearch || undefined },
     { skip: tab !== "cars" }
   );
+  const { data: discoverData } = useSearchGaragesQuery(
+    { q: "", page: 1, limit: 8 },
+    { skip: !user?.id }
+  );
+  const { data: userGaragesData } = useGetUserGaragesQuery(
+    { userId: user?.id, page: 1, limit: 6 },
+    { skip: !user?.id }
+  );
 
   const posts = tab === "trending" ? trendingData?.feed ?? [] : feedData?.feed ?? [];
   const cars = carsData?.cars ?? [];
+  const userGarages = userGaragesData?.garages ?? [];
+  const discoverGarages = (discoverData?.garages ?? [])
+    .filter((garage) => Number(garage.ownerId) !== Number(user?.id))
+    .slice(0, 5);
   const isLoading = tab === "posts" ? feedLoading : tab === "trending" ? trendingLoading : carsLoading;
 
   const handleCarSearch = (e) => {
@@ -265,12 +322,88 @@ export default function FeedPage({ trending = false }) {
   return (
     <Box sx={{ py: 3, px: 2, background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)", minHeight: "100%" }}>
       <Container maxWidth="lg">
-        {/* Header */}
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2, flexWrap: "wrap", gap: 1 }}>
-          <Typography variant="h5" sx={{ color: "white", fontWeight: 700 }}>
-            {tab === "cars" ? "Browse Cars" : tab === "trending" ? "Trending" : "Feed"}
+        {/* Home header */}
+        <Box
+          sx={{
+            mb: 3,
+            p: { xs: 2, md: 3 },
+            borderRadius: 3,
+            background: "linear-gradient(135deg, rgba(30,41,59,0.96), rgba(15,23,42,0.96))",
+            border: "1px solid rgba(255,255,255,0.08)",
+          }}
+        >
+          <Typography variant="overline" sx={{ color: "#38bdf8", fontWeight: 800, letterSpacing: 1.1 }}>
+            Connect Wheels Home
           </Typography>
+          <Typography variant="h4" sx={{ color: "white", fontWeight: 800, mb: 1, fontSize: { xs: "1.7rem", md: "2.1rem" } }}>
+            Discover garages, cars, and builds
+          </Typography>
+          <Typography sx={{ color: "#94a3b8", maxWidth: 720, mb: 2.5 }}>
+            Follow garages to build your personal feed, browse cars across the community, and see what is trending.
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <Button
+              variant="contained"
+              startIcon={<GarageIcon />}
+              onClick={() => navigate("/garages")}
+              sx={{ borderRadius: 2, textTransform: "none", bgcolor: "#38bdf8", "&:hover": { bgcolor: "#0ea5e9" } }}
+            >
+              Create or Explore Garages
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<DirectionsCarIcon />}
+              onClick={() => setTab("cars")}
+              sx={{ borderRadius: 2, textTransform: "none", borderColor: "rgba(251,191,36,0.5)", color: "#fbbf24" }}
+            >
+              Browse Cars
+            </Button>
+            <Button
+              variant="outlined"
+              onClick={() => setTab("trending")}
+              sx={{ borderRadius: 2, textTransform: "none", borderColor: "rgba(244,114,182,0.5)", color: "#f472b6" }}
+            >
+              Trending Posts
+            </Button>
+          </Box>
         </Box>
+
+        {userGarages.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5, gap: 1 }}>
+              <Box>
+                <Typography variant="h6" sx={{ color: "white", fontWeight: 800 }}>
+                  Your garages
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#94a3b8" }}>
+                  Garages you created appear here. Add cars or posts inside a garage to populate the feed.
+                </Typography>
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => navigate("/garages")}
+                sx={{ borderRadius: 2, textTransform: "none", borderColor: "#38bdf8", color: "#38bdf8", flexShrink: 0 }}
+              >
+                Manage
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1.5,
+                overflowX: "auto",
+                pb: 1,
+                "&::-webkit-scrollbar": { height: 6 },
+                "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(148,163,184,0.35)", borderRadius: 99 },
+              }}
+            >
+              {userGarages.map((garage) => (
+                <GarageDiscoveryCard key={garage.id} garage={garage} />
+              ))}
+            </Box>
+          </Box>
+        )}
 
         {/* Tab bar */}
         <Tabs
@@ -412,13 +545,36 @@ export default function FeedPage({ trending = false }) {
                 {tab === "trending" ? "No trending posts yet" : "Your feed is empty — follow some garages first"}
               </Typography>
               {tab === "posts" && (
-                <Button
-                  variant="outlined"
-                  onClick={() => navigate("/garages")}
-                  sx={{ borderRadius: 2, textTransform: "none", borderColor: "#38bdf8", color: "#38bdf8" }}
-                >
-                  Discover Garages
-                </Button>
+                <>
+                  <Button
+                    variant="outlined"
+                    onClick={() => navigate("/garages")}
+                    sx={{ borderRadius: 2, textTransform: "none", borderColor: "#38bdf8", color: "#38bdf8", mb: 3 }}
+                  >
+                    Discover Garages
+                  </Button>
+                  {discoverGarages.length > 0 && (
+                    <Box sx={{ mt: 2, textAlign: "left" }}>
+                      <Typography variant="subtitle2" sx={{ color: "white", fontWeight: 700, mb: 1.5, textAlign: "left" }}>
+                        Garages to follow
+                      </Typography>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          gap: 1.5,
+                          overflowX: "auto",
+                          pb: 1,
+                          "&::-webkit-scrollbar": { height: 6 },
+                          "&::-webkit-scrollbar-thumb": { bgcolor: "rgba(148,163,184,0.35)", borderRadius: 99 },
+                        }}
+                      >
+                        {discoverGarages.map((garage) => (
+                          <GarageDiscoveryCard key={garage.id} garage={garage} />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </>
               )}
             </Box>
           ) : (

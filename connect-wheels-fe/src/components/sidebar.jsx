@@ -9,7 +9,6 @@ import {
   Badge,
 } from "@mui/material";
 import {
-  Dashboard,
   Chat,
   Settings,
   Home,
@@ -23,7 +22,6 @@ export default function Sidebar() {
   const unreadCount = unreadData?.data?.unreadCount || 0;
 
   const menuItems = [
-    { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
     { text: "Feed", icon: <Home />, path: "/feed" },
     { text: "Garages", icon: <Garage />, path: "/garages" },
     { text: "Messages", icon: <Chat />, path: "/chat", badge: unreadCount },

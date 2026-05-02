@@ -49,7 +49,7 @@ export default function GaragesPage() {
   });
   const coverInputRef = useRef(null);
 
-  const { data, isLoading, isError } = useSearchGaragesQuery({
+  const { data, isLoading, isError, refetch } = useSearchGaragesQuery({
     q: search,
     location: location || undefined,
     page: 1,
@@ -82,6 +82,7 @@ export default function GaragesPage() {
       toast.success("Garage created successfully");
       setCreateOpen(false);
       setCreateData({ garageName: "", description: "", location: "", coverImageUrl: "", coverImageFile: null });
+      await refetch();
     } catch (err) {
       toast.error(err?.message || err?.data?.message || "Failed to create garage");
     }

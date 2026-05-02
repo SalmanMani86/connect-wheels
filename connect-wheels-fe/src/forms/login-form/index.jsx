@@ -38,7 +38,7 @@ export const LoginForm = () => {
       if (result.token) {
         dispatch(loginSuccess(result));
         resetForm();
-        navigate("/dashboard");
+        navigate("/feed");
         toast.success("Login successful!");
       } else {
         throw new Error("No token received");
