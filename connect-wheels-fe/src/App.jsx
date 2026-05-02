@@ -12,6 +12,8 @@ import Layout from "./components/layout";
 import LoginPage from "./auth-pages/login-page";
 import SignupPage from "./auth-pages/sign-up-page";
 import VerifyEmailPage from "./auth-pages/verify-email-page";
+import ForgotPasswordPage from "./auth-pages/forgot-password-page";
+import ResetPasswordPage from "./auth-pages/reset-password-page";
 import NotFoundPage from "./pages/not-found";
 import DashboardPage from "./pages/dashboard";
 import ChatPage from "./pages/chat";
@@ -49,6 +51,22 @@ const router = createBrowserRouter([
     element: (
       <PublicRoute>
         <VerifyEmailPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute>
+        <ForgotPasswordPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: (
+      <PublicRoute>
+        <ResetPasswordPage />
       </PublicRoute>
     ),
   },
