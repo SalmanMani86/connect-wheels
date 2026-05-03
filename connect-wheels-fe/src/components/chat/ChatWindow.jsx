@@ -579,12 +579,12 @@ export default function ChatWindow({ chat, onEditMessage }) {
                         elevation={0}
                         sx={{
                           p: 1.5,
-                          backgroundColor: isSender ? "#38bdf8" : "#334155",
-                          color: "white",
+                          backgroundColor: isSender ? "#0ea5e9" : "#334155",
+                          color: isSender ? "#082f49" : "white",
                           borderRadius: 2,
                           borderTopRightRadius: isSender ? 0 : 2,
                           borderTopLeftRadius: isSender ? 2 : 0,
-                          border: isSender ? "none" : "1px solid rgba(255,255,255,0.1)",
+                          border: isSender ? "1px solid rgba(125, 211, 252, 0.45)" : "1px solid rgba(255,255,255,0.1)",
                           position: "relative",
                           "&:hover .message-actions": { opacity: 1 },
                         }}
@@ -632,7 +632,7 @@ export default function ChatWindow({ chat, onEditMessage }) {
                             variant="caption"
                             sx={{
                               fontSize: "0.65rem",
-                              opacity: isSender ? 0.9 : 0.6,
+                              color: isSender ? "rgba(8,47,73,0.74)" : "rgba(255,255,255,0.62)",
                             }}
                           >
                             {formatMessageTime(message.createdAt)}
@@ -642,7 +642,7 @@ export default function ChatWindow({ chat, onEditMessage }) {
                               variant="caption"
                               sx={{
                                 fontSize: "0.65rem",
-                                opacity: 0.8,
+                                opacity: isSender ? 0.9 : 0.8,
                                 fontStyle: "italic",
                                 color: "inherit",
                               }}
@@ -653,9 +653,9 @@ export default function ChatWindow({ chat, onEditMessage }) {
                           {isSender && (
                             <>
                               {message.readBy?.length > 1 ? (
-                                <DoneAll sx={{ fontSize: 14, opacity: 0.9 }} />
+                                <DoneAll sx={{ fontSize: 14, color: "rgba(8,47,73,0.78)" }} />
                               ) : (
-                                <Check sx={{ fontSize: 14, opacity: 0.9 }} />
+                                <Check sx={{ fontSize: 14, color: "rgba(8,47,73,0.78)" }} />
                               )}
                             </>
                           )}

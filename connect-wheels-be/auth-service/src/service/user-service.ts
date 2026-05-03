@@ -59,10 +59,22 @@ const getProfile = async (userId: number) => {
     const userRepo = AppDataSource.getRepository(User);
     const user = await userRepo.findOne({
         where: { id: userId },
-        select: ['id', 'firstName', 'lastName', 'email', 'role', 'createdAt', 'googleId'],
+        select: ['id', 'firstName', 'lastName', 'email', 'role', 'createdAt', 'googleId', 'password'],
     });
     if (!user) throw new Error('User not found');
-    return user;
+    const hasPassword = Boolean(user.password);
+
+    return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        googleId: user.googleId,
+        hasPassword,
+        authProvider: user.googleId ? (hasPassword ? 'google_email' : 'google') : 'email',
+    };
 };
 
 const updateProfile = async (userId: number, data: { firstName?: string; lastName?: string }) => {
@@ -80,10 +92,14 @@ const changePassword = async (userId: number, currentPassword: string, newPasswo
     const user = await userRepo.findOne({ where: { id: userId } });
     if (!user) throw new Error('User not found');
     if (user.password) {
+        if (!currentPassword) throw new Error('Current password is required');
         const valid = await bcrypt.compare(currentPassword, user.password);
         if (!valid) throw new Error('Current password is incorrect');
     }
     user.password = await bcrypt.hash(newPassword, 10);
+    if (user.googleId) {
+        user.isEmailVerified = true;
+    }
     await userRepo.save(user);
     return { message: 'Password updated successfully' };
 };

@@ -1,4 +1,5 @@
 import { AppDataSource } from '../data-source';
+import { Brackets } from 'typeorm';
 import { Post } from '../entity/post';
 import { PostMedia } from '../entity/post-media';
 import { UserGarageFollow } from '../entity/user-garage-follow';
@@ -17,15 +18,20 @@ export const getPersonalizedFeed = async (
     select: ['garageId'],
   });
   const garageIds = follows.map((f) => f.garageId);
-  if (garageIds.length === 0) {
-    return { feed: [], pagination: { page, limit, total: 0, totalPages: 0 } };
-  }
 
   const [posts, total] = await postRepo()
     .createQueryBuilder('post')
-    .where('post.garageId IN (:...garageIds)', { garageIds })
-    .andWhere('post.isPublished = :published', { published: true })
     .leftJoinAndSelect('post.garage', 'garage')
+    .where('post.isPublished = :published', { published: true })
+    .andWhere(
+      new Brackets((qb) => {
+        qb.where('garage.ownerId = :userId', { userId });
+
+        if (garageIds.length > 0) {
+          qb.orWhere('post.garageId IN (:...garageIds)', { garageIds });
+        }
+      })
+    )
     .orderBy('post.createdAt', 'DESC')
     .skip((page - 1) * limit)
     .take(limit)

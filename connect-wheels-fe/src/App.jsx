@@ -12,8 +12,9 @@ import Layout from "./components/layout";
 import LoginPage from "./auth-pages/login-page";
 import SignupPage from "./auth-pages/sign-up-page";
 import VerifyEmailPage from "./auth-pages/verify-email-page";
+import ForgotPasswordPage from "./auth-pages/forgot-password-page";
+import ResetPasswordPage from "./auth-pages/reset-password-page";
 import NotFoundPage from "./pages/not-found";
-import DashboardPage from "./pages/dashboard";
 import ChatPage from "./pages/chat";
 import SettingsPage from "./pages/settings";
 import GaragesPage from "./pages/garages";
@@ -53,6 +54,22 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/forgot-password",
+    element: (
+      <PublicRoute>
+        <ForgotPasswordPage />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/reset-password",
+    element: (
+      <PublicRoute>
+        <ResetPasswordPage />
+      </PublicRoute>
+    ),
+  },
+  {
     path: "/",
     element: (
       <ProtectedRoute>
@@ -66,7 +83,7 @@ const router = createBrowserRouter([
       },
       {
         path: "dashboard",
-        element: <DashboardPage />,
+        element: <Navigate to="/feed" replace />,
       },
       {
         path: "feed",
@@ -74,7 +91,7 @@ const router = createBrowserRouter([
       },
       {
         path: "feed/trending",
-        element: <FeedPage trending />,
+        element: <Navigate to="/feed" replace />,
       },
       {
         path: "garages",

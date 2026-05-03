@@ -20,11 +20,13 @@ const registerUser = async (req: Request, res: Response) => {
   try {
     const result = await authService.registerUser(user);
     return res.status(201).json({ message: result.message });
-  } catch (error) {
+  } catch (error: any) {
     console.error("register user", error);
-    return res
-      .status(500)
-      .json({ message: "error registering user", error: error });
+    const status = typeof error?.status === "number" ? error.status : 500;
+    return res.status(status).json({
+      message: error?.message || "Error registering user",
+      code: error?.code,
+    });
   }
 };
 
@@ -45,9 +47,13 @@ const loginUser = async (req: Request, res: Response) => {
       userId: result.userId,
       email: result.email
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login error:", error);
-    return res.status(500).json({ message: "error login user", error: error });
+    const status = typeof error?.status === "number" ? error.status : 500;
+    return res.status(status).json({
+      message: error?.message || "Error logging in",
+      code: error?.code,
+    });
   }
 };
 
@@ -78,6 +84,42 @@ const verifyEmail = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("[verifyEmail] unexpected error:", error);
     return res.status(500).json({ message: "Error verifying email" });
+  }
+};
+
+const forgotPassword = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const result = await authService.requestPasswordReset(email);
+    return res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error("[forgotPassword] unexpected error:", error);
+    return res.status(500).json({ message: "Error requesting password reset" });
+  }
+};
+
+const resetPassword = async (req: Request, res: Response) => {
+  try {
+    const { token, password } = req.body;
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ message: "Reset token is required" });
+    }
+    if (!password || typeof password !== "string" || password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    const result = await authService.resetPassword(token, password);
+    if (!result.success) {
+      return res.status(400).json({ message: result.message });
+    }
+    return res.status(200).json({ message: result.message });
+  } catch (error) {
+    console.error("[resetPassword] unexpected error:", error);
+    return res.status(500).json({ message: "Error resetting password" });
   }
 };
 
@@ -124,6 +166,8 @@ const Authcontroller = {
   getGoogleAuthUrl,
   handleGoogleCallback,
   verifyEmail,
+  forgotPassword,
+  resetPassword,
 };
 
 export default Authcontroller;

@@ -34,7 +34,8 @@ export default function SettingsPage() {
   const [changePassword, { isLoading: changingPassword }] = useChangePasswordMutation();
 
   const displayUser = profile || storeUser;
-  const isGoogleUser = displayUser?.googleId || !displayUser?.password;
+  const hasPassword = displayUser?.hasPassword ?? !displayUser?.googleId;
+  const isGoogleOnlyUser = Boolean(displayUser?.googleId) && !hasPassword;
 
   const handleUpdateName = async () => {
     if (!nameData.firstName?.trim() && !nameData.lastName?.trim()) {
@@ -62,15 +63,16 @@ export default function SettingsPage() {
       toast.error("Passwords do not match");
       return;
     }
-    if (!isGoogleUser && !passwordData.currentPassword) {
+    if (hasPassword && !passwordData.currentPassword.trim()) {
       toast.error("Enter your current password");
       return;
     }
     try {
-      await changePassword({
-        currentPassword: passwordData.currentPassword,
+      const result = await changePassword({
+        ...(hasPassword ? { currentPassword: passwordData.currentPassword } : {}),
         newPassword: passwordData.newPassword,
       }).unwrap();
+      if (result?.user) dispatch(updateUser(result.user));
       toast.success("Password updated");
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
@@ -168,7 +170,13 @@ export default function SettingsPage() {
               borderRadius: 2,
               textTransform: "none",
               backgroundColor: "#38bdf8",
+              color: "#082f49",
+              fontWeight: 800,
               "&:hover": { backgroundColor: "#0ea5e9" },
+              "&.Mui-disabled": {
+                backgroundColor: "#475569",
+                color: "#cbd5e1",
+              },
             }}
           >
             {updating ? <CircularProgress size={24} color="inherit" /> : "Save Changes"}
@@ -191,7 +199,7 @@ export default function SettingsPage() {
               Password
             </Typography>
           </Box>
-          {isGoogleUser && (
+          {isGoogleOnlyUser && (
             <Alert
               severity="info"
               sx={{
@@ -205,7 +213,7 @@ export default function SettingsPage() {
               You signed in with Google. You can set a password to also sign in with email.
             </Alert>
           )}
-          {!isGoogleUser && (
+          {hasPassword && (
             <TextField
               fullWidth
               type="password"
@@ -246,10 +254,16 @@ export default function SettingsPage() {
               borderRadius: 2,
               textTransform: "none",
               backgroundColor: "#38bdf8",
+              color: "#082f49",
+              fontWeight: 800,
               "&:hover": { backgroundColor: "#0ea5e9" },
+              "&.Mui-disabled": {
+                backgroundColor: "#475569",
+                color: "#cbd5e1",
+              },
             }}
           >
-            {changingPassword ? <CircularProgress size={24} color="inherit" /> : "Change Password"}
+            {changingPassword ? <CircularProgress size={24} color="inherit" /> : hasPassword ? "Change Password" : "Set Password"}
           </Button>
         </Paper>
       </Container>

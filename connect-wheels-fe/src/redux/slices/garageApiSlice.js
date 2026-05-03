@@ -67,9 +67,14 @@ export const garageApiSlice = createApi({
 
     // Browse all cars across the platform
     browseCars: builder.query({
-      query: ({ page = 1, limit = 20, q } = {}) => ({
+      query: ({ page = 1, limit = 20, q, ownership = "all" } = {}) => ({
         url: `${GARAGE_BASE}/cars`,
-        params: { page, limit, ...(q ? { q } : {}) },
+        params: {
+          page,
+          limit,
+          ...(q ? { q } : {}),
+          ...(ownership && ownership !== "all" ? { ownership } : {}),
+        },
       }),
       providesTags: (result) =>
         result?.cars
@@ -106,7 +111,13 @@ export const garageApiSlice = createApi({
         method: "POST",
         body: formData,
       }),
-      invalidatesTags: (_result, _err, { garageId }) => [{ type: "Car", id: `GARAGE-${garageId}` }],
+      invalidatesTags: (_result, _err, { garageId }) => [
+        { type: "Car", id: `GARAGE-${garageId}` },
+        { type: "Car", id: "BROWSE" },
+        { type: "Garage", id: garageId },
+        { type: "Garage", id: "USER" },
+        { type: "Garage", id: "LIST" },
+      ],
     }),
     updateCar: builder.mutation({
       query: ({ garageId, carId, formData }) => ({
@@ -117,6 +128,9 @@ export const garageApiSlice = createApi({
       invalidatesTags: (_result, _err, { garageId, carId }) => [
         { type: "Car", id: carId },
         { type: "Car", id: `GARAGE-${garageId}` },
+        { type: "Car", id: "BROWSE" },
+        { type: "Garage", id: garageId },
+        { type: "Garage", id: "USER" },
       ],
     }),
     deleteCar: builder.mutation({
@@ -124,7 +138,13 @@ export const garageApiSlice = createApi({
         url: `${GARAGE_BASE}/${garageId}/cars/${carId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_result, _err, { garageId }) => [{ type: "Car", id: `GARAGE-${garageId}` }],
+      invalidatesTags: (_result, _err, { garageId }) => [
+        { type: "Car", id: `GARAGE-${garageId}` },
+        { type: "Car", id: "BROWSE" },
+        { type: "Garage", id: garageId },
+        { type: "Garage", id: "USER" },
+        { type: "Garage", id: "LIST" },
+      ],
     }),
 
     // Follow
@@ -135,7 +155,9 @@ export const garageApiSlice = createApi({
       }),
       invalidatesTags: (result, _err, garageId) => [
         { type: "Garage", id: garageId },
+        { type: "Garage", id: "LIST" },
         { type: "Follow", id: "USER" },
+        { type: "Feed", id: "PERSONAL" },
         "Notification",
       ],
     }),
@@ -146,7 +168,9 @@ export const garageApiSlice = createApi({
       }),
       invalidatesTags: (_result, _err, garageId) => [
         { type: "Garage", id: garageId },
+        { type: "Garage", id: "LIST" },
         { type: "Follow", id: "USER" },
+        { type: "Feed", id: "PERSONAL" },
       ],
     }),
     getFollowers: builder.query({
@@ -187,6 +211,10 @@ export const garageApiSlice = createApi({
       invalidatesTags: (_result, _err, { garageId }) => [
         { type: "Post", id: `GARAGE-${garageId}` },
         { type: "Feed", id: "PERSONAL" },
+        { type: "Feed", id: "TRENDING" },
+        { type: "Garage", id: garageId },
+        { type: "Garage", id: "USER" },
+        { type: "Garage", id: "LIST" },
       ],
     }),
     getPost: builder.query({
@@ -199,14 +227,24 @@ export const garageApiSlice = createApi({
         method: "PUT",
         body,
       }),
-      invalidatesTags: (_result, _err, { postId }) => [{ type: "Post", id: postId }],
+      invalidatesTags: (_result, _err, { postId }) => [
+        { type: "Post", id: postId },
+        { type: "Feed", id: "PERSONAL" },
+        { type: "Feed", id: "TRENDING" },
+      ],
     }),
     deletePost: builder.mutation({
       query: (postId) => ({
         url: `${GARAGE_BASE}/posts/${postId}`,
         method: "DELETE",
       }),
-      invalidatesTags: (_result, _err, postId) => [{ type: "Post", id: postId }],
+      invalidatesTags: (_result, _err, postId) => [
+        { type: "Post", id: postId },
+        { type: "Feed", id: "PERSONAL" },
+        { type: "Feed", id: "TRENDING" },
+        { type: "Garage", id: "USER" },
+        { type: "Garage", id: "LIST" },
+      ],
     }),
 
     // Feed
@@ -243,14 +281,23 @@ export const garageApiSlice = createApi({
         url: `${GARAGE_BASE}/posts/${postId}/like`,
         method: "POST",
       }),
-      invalidatesTags: (_result, _err, postId) => [{ type: "Post", id: postId }, "Notification"],
+      invalidatesTags: (_result, _err, postId) => [
+        { type: "Post", id: postId },
+        { type: "Feed", id: "PERSONAL" },
+        { type: "Feed", id: "TRENDING" },
+        "Notification",
+      ],
     }),
     unlikePost: builder.mutation({
       query: (postId) => ({
         url: `${GARAGE_BASE}/posts/${postId}/unlike`,
         method: "DELETE",
       }),
-      invalidatesTags: (_result, _err, postId) => [{ type: "Post", id: postId }],
+      invalidatesTags: (_result, _err, postId) => [
+        { type: "Post", id: postId },
+        { type: "Feed", id: "PERSONAL" },
+        { type: "Feed", id: "TRENDING" },
+      ],
     }),
     getPostLikes: builder.query({
       query: ({ postId, page = 1, limit = 20 }) => ({

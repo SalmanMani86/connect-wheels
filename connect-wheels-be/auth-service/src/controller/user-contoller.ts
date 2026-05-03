@@ -90,9 +90,12 @@ const changePassword = async (req: AuthRequest, res: Response) => {
         if (!userId) return res.status(401).json({ message: 'Authentication required' });
         const { currentPassword, newPassword } = req.body;
         await userService.changePassword(Number(userId), currentPassword || '', newPassword);
-        return res.status(200).json({ message: 'Password updated successfully' });
+        const user = await userService.getProfile(Number(userId));
+        return res.status(200).json({ message: 'Password updated successfully', user });
     } catch (error: any) {
-        if (error?.message === 'Current password is incorrect') return res.status(400).json({ message: error.message });
+        if (error?.message === 'Current password is required' || error?.message === 'Current password is incorrect') {
+            return res.status(400).json({ message: error.message });
+        }
         console.error('changePassword error:', error);
         return res.status(500).json({ message: error?.message || 'Error changing password' });
     }

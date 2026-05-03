@@ -34,6 +34,22 @@ export const apiSlice = createApi({
         method: "GET",
       }),
     }),
+
+    forgotPassword: builder.mutation({
+      query: (email) => ({
+        url: "/auth/forgot-password",
+        method: "POST",
+        body: { email },
+      }),
+    }),
+
+    resetPassword: builder.mutation({
+      query: ({ token, password }) => ({
+        url: "/auth/reset-password",
+        method: "POST",
+        body: { token, password },
+      }),
+    }),
     
     loginWithGoogle: builder.query({
       query: () => "/auth/google",
@@ -60,6 +76,7 @@ export const apiSlice = createApi({
         method: "PUT",
         body,
       }),
+      invalidatesTags: ["User"],
     }),
     // Get all users (for chat)
     getAllUsers: builder.query({
@@ -77,6 +94,8 @@ export const {
   useLoginUserMutation,
   useRegisterUserMutation,
   useVerifyEmailMutation,
+  useForgotPasswordMutation,
+  useResetPasswordMutation,
   useLoginWithGoogleQuery,
   useGetUserProfileQuery,
   useUpdateUserProfileMutation,

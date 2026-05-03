@@ -9,6 +9,8 @@ const router = require('express').Router();
 router.post('/register', registerValidator, controller.registerUser);
 router.post('/login', loginValidator, controller.loginUser);
 router.get('/verify-email', controller.verifyEmail);
+router.post('/forgot-password', controller.forgotPassword);
+router.post('/reset-password', controller.resetPassword);
 
 //google routes
 router.get('/google', controller.getGoogleAuthUrl);

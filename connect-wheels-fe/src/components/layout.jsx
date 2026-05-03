@@ -2,11 +2,10 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Box, Paper, BottomNavigation, BottomNavigationAction, Badge } from "@mui/material";
 import Navbar from "./navbar";
 import Sidebar from "./sidebar";
-import { Dashboard, Home, Garage, Chat, Settings } from "@mui/icons-material";
+import { Home, Garage, Chat, Settings } from "@mui/icons-material";
 import { useGetUnreadCountQuery } from "../redux/slices/chatApiSlice";
 
 const mobileNavItems = [
-  { path: "/dashboard", icon: <Dashboard />, label: "Dashboard" },
   { path: "/feed", icon: <Home />, label: "Feed" },
   { path: "/garages", icon: <Garage />, label: "Garages" },
   { path: "/chat", icon: <Chat />, label: "Messages" },

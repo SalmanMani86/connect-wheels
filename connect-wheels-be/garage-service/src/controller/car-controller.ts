@@ -11,7 +11,12 @@ const browseCars = async (req: AuthRequest, res: Response): Promise<void> => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
     const search = (req.query.q as string) || undefined;
-    const result = await carService.browseCars(page, limit, search);
+    const ownershipQuery = req.query.ownership as string | undefined;
+    const ownership = ['own', 'community'].includes(ownershipQuery || '')
+      ? (ownershipQuery as 'own' | 'community')
+      : 'all';
+    const currentUserId = req.user?.id ?? req.user?.userId;
+    const result = await carService.browseCars(page, limit, search, ownership, currentUserId);
     res.status(200).json(result);
   } catch (error) {
     console.error(error);

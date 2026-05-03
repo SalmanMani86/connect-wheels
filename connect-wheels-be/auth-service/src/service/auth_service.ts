@@ -8,6 +8,7 @@ import { CreateUserDTO } from "../dtos/createUserDto";
 import { LoginUserDTO } from "../dtos/loginUserDto";
 import { publishEvent } from "../../../common/messaging/kafka/producer";
 import { AUTH_EMAIL_VERIFICATION } from "../../../common/messaging/kafka/topics";
+import { sendPasswordResetEmail, sendVerificationEmail } from "./email-service";
 
 const JWT_SECRET: string = process.env.JWT_SECRET || "dev-only-insecure-secret-change-me";
 
@@ -32,21 +33,39 @@ export const registerUser = async (user: CreateUserDTO) => {
     });
     await userRepo.save(newUser);
 
+    const baseUrl = process.env.FRONTEND_VERIFY_EMAIL_URL || "http://localhost:5173/verify-email";
+    const verifyLink = `${baseUrl}?token=${verificationToken}`;
+
     if (process.env.ENABLE_KAFKA === "true" || process.env.ENABLE_KAFKA === "1") {
+      // With Kafka: publish event; the email-verification-consumer sends the email.
       await publishEvent(AUTH_EMAIL_VERIFICATION, {
         userId: newUser.id,
         email: newUser.email,
         token: verificationToken,
       });
     } else {
-      const baseUrl = process.env.FRONTEND_VERIFY_EMAIL_URL || "http://localhost:5173/verify-email";
-      console.log("[auth] Kafka disabled – verification link:", `${baseUrl}?token=${verificationToken}`);
+      // Without Kafka: send the email directly so registration still works.
+      console.log("[auth] Kafka disabled – sending verification email directly to", newUser.email);
+      try {
+        await sendVerificationEmail(newUser.email, verifyLink);
+      } catch (mailErr: any) {
+        console.error("[auth] sendVerificationEmail failed:", mailErr?.message || mailErr);
+        console.log("[auth] Verification link (manual):", verifyLink);
+      }
     }
 
     return { message: "Registered Successfully. Please verify your email." };
   } catch (error: any) {
     console.error("registerUser error:", error);
-    return { message: "Error registering user", error: error.message };
+    // Re-throw with a structured shape so the controller can map to a proper HTTP status.
+    if (error?.code === "23505") {
+      // Postgres unique_violation
+      const dupErr: any = new Error("An account with this email already exists.");
+      dupErr.status = 409;
+      dupErr.code = "EMAIL_TAKEN";
+      throw dupErr;
+    }
+    throw error;
   }
 };
 
@@ -76,45 +95,101 @@ export const verifyEmail = async (token: string) => {
   return { success: true, message: "Email verified successfully" };
 };
 
-export const loginUser = async (userDto: LoginUserDTO) => {
-  try {
-    const userRepository = AppDataSource.getRepository(User);
+export const requestPasswordReset = async (email: string) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const userRepo = AppDataSource.getRepository(User);
+  const user = await userRepo.findOne({ where: { email: normalizedEmail } });
+  const genericMessage = "If an account exists for this email, a password reset link has been sent.";
 
-    const existingUser = await userRepository.findOne({
-      where: { email: userDto.email },
-    });
-    if (!existingUser) {
-      throw new Error("Invalid credentials");
-    }
-
-    const isPasswordValid = await bcrypt.compare(
-      userDto.password,
-      existingUser.password
-    );
-    if (!isPasswordValid) {
-      throw new Error("Invalid credentials");
-    }
-
-    if (!existingUser.isEmailVerified) {
-      throw new Error("Email not verified");
-    }
-
-    const token = jwt.sign(
-      { userId: existingUser.id, email: existingUser.email },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    return {
-      message: "Login successful",
-      token,
-      userId: existingUser.id,
-      email: existingUser.email,
-    };
-  } catch (error: any) {
-    console.error("loginUser error:", error);
-    return { message: "Login failed", error: error.message || error };
+  // Avoid revealing whether the email exists.
+  if (!user || !user.password) {
+    return { message: genericMessage };
   }
+
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  user.resetPasswordToken = resetToken;
+  user.resetPasswordTokenExpiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 minutes
+  await userRepo.save(user);
+
+  const baseUrl = process.env.FRONTEND_RESET_PASSWORD_URL || "http://localhost:5173/reset-password";
+  const resetLink = `${baseUrl}?token=${resetToken}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, resetLink);
+  } catch (mailErr: any) {
+    console.error("[auth] sendPasswordResetEmail failed:", mailErr?.message || mailErr);
+    console.log("[auth] Password reset link (manual):", resetLink);
+  }
+
+  return { message: genericMessage };
+};
+
+export const resetPassword = async (token: string, password: string) => {
+  const userRepo = AppDataSource.getRepository(User);
+  const user = await userRepo.findOne({ where: { resetPasswordToken: token } });
+
+  if (!user) {
+    return { success: false, message: "Invalid or expired reset token." };
+  }
+
+  if (user.resetPasswordTokenExpiresAt && user.resetPasswordTokenExpiresAt < new Date()) {
+    user.resetPasswordToken = null;
+    user.resetPasswordTokenExpiresAt = null;
+    await userRepo.save(user);
+    return { success: false, message: "Password reset link has expired." };
+  }
+
+  user.password = await bcrypt.hash(password, 10);
+  user.resetPasswordToken = null;
+  user.resetPasswordTokenExpiresAt = null;
+  await userRepo.save(user);
+
+  return { success: true, message: "Password reset successfully. You can now log in." };
+};
+
+export const loginUser = async (userDto: LoginUserDTO) => {
+  const userRepository = AppDataSource.getRepository(User);
+
+  const existingUser = await userRepository.findOne({
+    where: { email: userDto.email },
+  });
+  if (!existingUser?.password) {
+    const error = new Error("Invalid email or password") as Error & { status?: number; code?: string };
+    error.status = 401;
+    error.code = "INVALID_CREDENTIALS";
+    throw error;
+  }
+
+  const isPasswordValid = await bcrypt.compare(
+    userDto.password,
+    existingUser.password
+  );
+  if (!isPasswordValid) {
+    const error = new Error("Invalid email or password") as Error & { status?: number; code?: string };
+    error.status = 401;
+    error.code = "INVALID_CREDENTIALS";
+    throw error;
+  }
+
+  if (!existingUser.isEmailVerified && !existingUser.googleId) {
+    const error = new Error("Email not verified") as Error & { status?: number; code?: string };
+    error.status = 403;
+    error.code = "EMAIL_NOT_VERIFIED";
+    throw error;
+  }
+
+  const token = jwt.sign(
+    { userId: existingUser.id, email: existingUser.email },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  return {
+    message: "Login successful",
+    token,
+    userId: existingUser.id,
+    email: existingUser.email,
+  };
 };
 
 const generateJWT = (user: User) => {
@@ -129,6 +204,8 @@ const authService = {
   registerUser,
   loginUser,
   verifyEmail,
+  requestPasswordReset,
+  resetPassword,
   generateJWT,
 };
 
