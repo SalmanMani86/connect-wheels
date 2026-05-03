@@ -17,10 +17,18 @@ if (!process.env.JWT_SECRET) {
 }
 
 export const registerUser = async (user: CreateUserDTO) => {
+  const registerStarted = Date.now();
+  const emailNormalized = user.email?.trim().toLowerCase();
+  console.log("[auth] registerUser start", {
+    email: emailNormalized,
+    kafkaEnabled: process.env.ENABLE_KAFKA === "true" || process.env.ENABLE_KAFKA === "1",
+  });
   try {
     const userRepo = AppDataSource.getRepository(User);
 
+    const hashStarted = Date.now();
     user.password = await bcrypt.hash(user.password, 10);
+    console.log("[auth] password hashed", { durationMs: Date.now() - hashStarted });
 
     const verificationToken = crypto.randomBytes(32).toString("hex");
     const tokenExpiresAt = new Date(Date.now() + 1000 * 60 * 60); // 1 hour
@@ -31,29 +39,58 @@ export const registerUser = async (user: CreateUserDTO) => {
       emailVerificationToken: verificationToken,
       emailVerificationTokenExpiresAt: tokenExpiresAt,
     });
+    const saveStarted = Date.now();
     await userRepo.save(newUser);
+    console.log("[auth] user row saved", {
+      userId: newUser.id,
+      email: newUser.email,
+      durationMs: Date.now() - saveStarted,
+    });
 
     const baseUrl = process.env.FRONTEND_VERIFY_EMAIL_URL || "http://localhost:5173/verify-email";
     const verifyLink = `${baseUrl}?token=${verificationToken}`;
 
     if (process.env.ENABLE_KAFKA === "true" || process.env.ENABLE_KAFKA === "1") {
       // With Kafka: publish event; the email-verification-consumer sends the email.
+      const kafkaStarted = Date.now();
       await publishEvent(AUTH_EMAIL_VERIFICATION, {
         userId: newUser.id,
         email: newUser.email,
         token: verificationToken,
       });
+      console.log("[auth] Kafka publish AUTH_EMAIL_VERIFICATION", {
+        userId: newUser.id,
+        durationMs: Date.now() - kafkaStarted,
+      });
     } else {
       // Without Kafka: send the email directly so registration still works.
-      console.log("[auth] Kafka disabled – sending verification email directly to", newUser.email);
+      console.log("[auth] Kafka disabled – sending verification email directly", {
+        userId: newUser.id,
+        email: newUser.email,
+      });
+      const mailStarted = Date.now();
       try {
         await sendVerificationEmail(newUser.email, verifyLink);
+        console.log("[auth] sendVerificationEmail finished ok", {
+          userId: newUser.id,
+          durationMs: Date.now() - mailStarted,
+        });
       } catch (mailErr: any) {
-        console.error("[auth] sendVerificationEmail failed:", mailErr?.message || mailErr);
-        console.log("[auth] Verification link (manual):", verifyLink);
+        console.error("[auth] sendVerificationEmail failed after direct send attempt", {
+          userId: newUser.id,
+          email: newUser.email,
+          durationMs: Date.now() - mailStarted,
+          message: mailErr?.message,
+          code: mailErr?.code,
+        });
+        console.log("[auth] Verification link (manual fallback — use if email did not arrive):", verifyLink);
       }
     }
 
+    console.log("[auth] registerUser complete", {
+      userId: newUser.id,
+      totalDurationMs: Date.now() - registerStarted,
+    });
     return { message: "Registered Successfully. Please verify your email." };
   } catch (error: any) {
     console.error("registerUser error:", error);

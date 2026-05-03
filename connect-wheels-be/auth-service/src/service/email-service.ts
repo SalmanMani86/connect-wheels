@@ -3,17 +3,65 @@ import nodemailer from "nodemailer";
 const isSmtpConfigured = () =>
   Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
+const smtpPort = parseInt(process.env.SMTP_PORT || "587", 10);
+const smtpSecure = process.env.SMTP_SECURE === "true";
+
 const transporter = isSmtpConfigured()
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT || "587", 10),
-      secure: process.env.SMTP_SECURE === "true",
+      port: smtpPort,
+      secure: smtpSecure,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
+      connectionTimeout: parseInt(process.env.SMTP_CONNECTION_TIMEOUT_MS || "20000", 10),
+      greetingTimeout: parseInt(process.env.SMTP_GREETING_TIMEOUT_MS || "20000", 10),
+      socketTimeout: parseInt(process.env.SMTP_SOCKET_TIMEOUT_MS || "60000", 10),
+      ...(process.env.SMTP_FORCE_IPV4 === "true" || process.env.SMTP_FORCE_IPV4 === "1"
+        ? { family: 4 as const }
+        : {}),
     })
   : null;
+
+if (transporter) {
+  console.log("[email-service] SMTP transport ready", {
+    host: process.env.SMTP_HOST,
+    port: smtpPort,
+    secure: smtpSecure,
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    connectionTimeoutMs: parseInt(process.env.SMTP_CONNECTION_TIMEOUT_MS || "20000", 10),
+    forceIpv4: process.env.SMTP_FORCE_IPV4 === "true" || process.env.SMTP_FORCE_IPV4 === "1",
+  });
+} else {
+  console.warn("[email-service] SMTP not configured (set SMTP_HOST, SMTP_USER, SMTP_PASS)");
+}
+
+/** Safe diagnostics for nodemailer / Node network errors (no secrets). */
+const logSmtpFailure = (context: string, err: unknown, durationMs: number, meta?: Record<string, unknown>) => {
+  const e = err as NodeJS.ErrnoException & {
+    response?: string;
+    responseCode?: number;
+    command?: string;
+    code?: string;
+    syscall?: string;
+    address?: string;
+    port?: number;
+  };
+  console.error(`[email-service] ${context} failed`, {
+    durationMs,
+    ...meta,
+    message: e?.message,
+    code: e?.code,
+    errno: e?.errno,
+    syscall: e?.syscall,
+    address: e?.address,
+    port: e?.port,
+    command: e?.command,
+    responseCode: e?.responseCode,
+    response: e?.response,
+  });
+};
 
 const renderAuthEmail = ({
   title,
@@ -95,6 +143,7 @@ export const sendVerificationEmail = async (to: string, verifyLink: string) => {
     console.log("[email-service] SMTP not configured; skipping send. Link:", verifyLink);
     return;
   }
+  const started = Date.now();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@connectwheels.com";
   const subject = "Verify your email – Connect Wheels";
   const text = [
@@ -115,14 +164,24 @@ export const sendVerificationEmail = async (to: string, verifyLink: string) => {
     link: verifyLink,
     note: "If you did not create a Connect Wheels account, you can safely ignore this email.",
   });
-  const info = await transporter.sendMail({ from, to, subject, text, html });
-  console.log("[email-service] Verification email sent", {
-    to,
-    messageId: info.messageId,
-    accepted: info.accepted,
-    rejected: info.rejected,
-    response: info.response,
-  });
+  try {
+    const info = await transporter.sendMail({ from, to, subject, text, html });
+    console.log("[email-service] Verification email sent", {
+      durationMs: Date.now() - started,
+      to,
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    });
+  } catch (err) {
+    logSmtpFailure("sendVerificationEmail", err, Date.now() - started, {
+      to,
+      host: process.env.SMTP_HOST,
+      smtpPort,
+    });
+    throw err;
+  }
 };
 
 export const sendPasswordResetEmail = async (to: string, resetLink: string) => {
@@ -130,6 +189,7 @@ export const sendPasswordResetEmail = async (to: string, resetLink: string) => {
     console.log("[email-service] SMTP not configured; skipping password reset send. Link:", resetLink);
     return;
   }
+  const started = Date.now();
   const from = process.env.SMTP_FROM || process.env.SMTP_USER || "noreply@connectwheels.com";
   const subject = "Reset your password - Connect Wheels";
   const text = [
@@ -150,14 +210,24 @@ export const sendPasswordResetEmail = async (to: string, resetLink: string) => {
     link: resetLink,
     note: "If you did not request a password reset, you can ignore this email and your password will stay unchanged.",
   });
-  const info = await transporter.sendMail({ from, to, subject, text, html });
-  console.log("[email-service] Password reset email sent", {
-    to,
-    messageId: info.messageId,
-    accepted: info.accepted,
-    rejected: info.rejected,
-    response: info.response,
-  });
+  try {
+    const info = await transporter.sendMail({ from, to, subject, text, html });
+    console.log("[email-service] Password reset email sent", {
+      durationMs: Date.now() - started,
+      to,
+      messageId: info.messageId,
+      accepted: info.accepted,
+      rejected: info.rejected,
+      response: info.response,
+    });
+  } catch (err) {
+    logSmtpFailure("sendPasswordResetEmail", err, Date.now() - started, {
+      to,
+      host: process.env.SMTP_HOST,
+      smtpPort,
+    });
+    throw err;
+  }
 };
 
 export default { sendVerificationEmail, sendPasswordResetEmail };
