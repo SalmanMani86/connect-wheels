@@ -76,6 +76,7 @@ export const apiSlice = createApi({
         method: "PUT",
         body,
       }),
+      invalidatesTags: ["User"],
     }),
     // Get all users (for chat)
     getAllUsers: builder.query({

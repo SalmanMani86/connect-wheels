@@ -120,6 +120,7 @@ export const handleGoogleCallback = async (code: string) => {
         googleRefreshToken: tokens.refresh_token,
         firstName: userInfo.given_name,
         lastName: userInfo.family_name,
+        isEmailVerified: true,
       });
       await userRepo.save(user);
       console.log("New user created:", user.email);
@@ -127,6 +128,7 @@ export const handleGoogleCallback = async (code: string) => {
       console.log("Existing user found:", user.email);
       // Also update refresh token for existing users
       user.googleRefreshToken = tokens.refresh_token;
+      user.isEmailVerified = true;
       await userRepo.save(user);
     }
 

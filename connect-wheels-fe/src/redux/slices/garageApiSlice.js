@@ -67,9 +67,14 @@ export const garageApiSlice = createApi({
 
     // Browse all cars across the platform
     browseCars: builder.query({
-      query: ({ page = 1, limit = 20, q } = {}) => ({
+      query: ({ page = 1, limit = 20, q, ownership = "all" } = {}) => ({
         url: `${GARAGE_BASE}/cars`,
-        params: { page, limit, ...(q ? { q } : {}) },
+        params: {
+          page,
+          limit,
+          ...(q ? { q } : {}),
+          ...(ownership && ownership !== "all" ? { ownership } : {}),
+        },
       }),
       providesTags: (result) =>
         result?.cars

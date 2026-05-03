@@ -148,44 +148,48 @@ export const resetPassword = async (token: string, password: string) => {
 };
 
 export const loginUser = async (userDto: LoginUserDTO) => {
-  try {
-    const userRepository = AppDataSource.getRepository(User);
+  const userRepository = AppDataSource.getRepository(User);
 
-    const existingUser = await userRepository.findOne({
-      where: { email: userDto.email },
-    });
-    if (!existingUser) {
-      throw new Error("Invalid credentials");
-    }
-
-    const isPasswordValid = await bcrypt.compare(
-      userDto.password,
-      existingUser.password
-    );
-    if (!isPasswordValid) {
-      throw new Error("Invalid credentials");
-    }
-
-    if (!existingUser.isEmailVerified) {
-      throw new Error("Email not verified");
-    }
-
-    const token = jwt.sign(
-      { userId: existingUser.id, email: existingUser.email },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    return {
-      message: "Login successful",
-      token,
-      userId: existingUser.id,
-      email: existingUser.email,
-    };
-  } catch (error: any) {
-    console.error("loginUser error:", error);
-    return { message: "Login failed", error: error.message || error };
+  const existingUser = await userRepository.findOne({
+    where: { email: userDto.email },
+  });
+  if (!existingUser?.password) {
+    const error = new Error("Invalid email or password") as Error & { status?: number; code?: string };
+    error.status = 401;
+    error.code = "INVALID_CREDENTIALS";
+    throw error;
   }
+
+  const isPasswordValid = await bcrypt.compare(
+    userDto.password,
+    existingUser.password
+  );
+  if (!isPasswordValid) {
+    const error = new Error("Invalid email or password") as Error & { status?: number; code?: string };
+    error.status = 401;
+    error.code = "INVALID_CREDENTIALS";
+    throw error;
+  }
+
+  if (!existingUser.isEmailVerified && !existingUser.googleId) {
+    const error = new Error("Email not verified") as Error & { status?: number; code?: string };
+    error.status = 403;
+    error.code = "EMAIL_NOT_VERIFIED";
+    throw error;
+  }
+
+  const token = jwt.sign(
+    { userId: existingUser.id, email: existingUser.email },
+    JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  return {
+    message: "Login successful",
+    token,
+    userId: existingUser.id,
+    email: existingUser.email,
+  };
 };
 
 const generateJWT = (user: User) => {

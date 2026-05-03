@@ -3,11 +3,12 @@ import garageRoutes from './garage-routes';
 import carRoutes from './car-routes';
 import postRoutes from './post-routes';
 import carController from '../controller/car-controller';
+import { authenticateJWT } from '../../../common/auth-middleware/auth_middleware';
 
 const router = Router();
 
 // Browse all cars across all garages (must be before /:garageId/cars to avoid param conflict)
-router.get('/cars', carController.browseCars);
+router.get('/cars', authenticateJWT, carController.browseCars);
 
 // Car routes (/:garageId/cars)
 router.use('/:garageId/cars', carRoutes);

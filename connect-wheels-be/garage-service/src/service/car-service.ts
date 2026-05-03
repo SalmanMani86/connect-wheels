@@ -59,7 +59,9 @@ export const addCar = async (
 export const browseCars = async (
   page: number = 1,
   limit: number = 20,
-  search?: string
+  search?: string,
+  ownership: 'all' | 'own' | 'community' = 'all',
+  currentUserId?: number
 ) => {
   const query = carRepo()
     .createQueryBuilder('car')
@@ -70,14 +72,30 @@ export const browseCars = async (
     .take(limit);
 
   if (search?.trim()) {
-    query.where(
+    query.andWhere(
       '(LOWER(car.make) LIKE :s OR LOWER(car.model) LIKE :s OR LOWER(car.color) LIKE :s OR LOWER(car.engineType) LIKE :s)',
       { s: `%${search.trim().toLowerCase()}%` }
     );
   }
 
+  if (currentUserId && ownership === 'own') {
+    query.andWhere('garage.ownerId = :currentUserId', { currentUserId });
+  }
+
+  if (currentUserId && ownership === 'community') {
+    query.andWhere('garage.ownerId != :currentUserId', { currentUserId });
+  }
+
   const [cars, total] = await query.getManyAndCount();
-  return { cars, total, page, limit, totalPages: Math.ceil(total / limit) };
+  const normalizedUserId = currentUserId ? Number(currentUserId) : undefined;
+  const carsWithOwnership = cars.map((car) => ({
+    ...car,
+    isOwnedByCurrentUser: normalizedUserId
+      ? Number(car.garage?.ownerId) === normalizedUserId
+      : false,
+  }));
+
+  return { cars: carsWithOwnership, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const getGarageCars = async (

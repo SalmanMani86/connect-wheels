@@ -91,7 +91,7 @@ const router = createBrowserRouter([
       },
       {
         path: "feed/trending",
-        element: <FeedPage trending />,
+        element: <Navigate to="/feed" replace />,
       },
       {
         path: "garages",

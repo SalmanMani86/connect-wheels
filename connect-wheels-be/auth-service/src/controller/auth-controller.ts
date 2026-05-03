@@ -47,9 +47,13 @@ const loginUser = async (req: Request, res: Response) => {
       userId: result.userId,
       email: result.email
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login error:", error);
-    return res.status(500).json({ message: "error login user", error: error });
+    const status = typeof error?.status === "number" ? error.status : 500;
+    return res.status(status).json({
+      message: error?.message || "Error logging in",
+      code: error?.code,
+    });
   }
 };
 
